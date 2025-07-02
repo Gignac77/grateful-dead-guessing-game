@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>⚡💀 Guess the Dead Year 💀⚡</title>
+  <title>Guess the Dead Year</title>
   <style>
     body {
       font-family: 'Comic Sans MS', cursive, sans-serif;
@@ -44,16 +44,16 @@
       background-color: #0066cc;
     }
     .donate {
-      background-color: #b30059;
-      color: yellow;
-      font-family: 'Comic Sans MS', cursive, sans-serif;
-      font-weight: bold;
-      padding: 0.5em 1.5em;
-      font-size: 1.1em;
-      border-radius: 0.5em;
-      margin-top: 2em;
       display: inline-block;
+      margin-top: 2em;
+      background-color: #d63384;
+      color: yellow;
       text-decoration: none;
+      font-weight: bold;
+      font-size: 1.2em;
+      padding: 0.5em 1.5em;
+      border-radius: 0.5em;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
     }
     input {
       font-size: 1em;
@@ -66,23 +66,18 @@
       text-align: center;
       font-weight: bold;
       width: 6em;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
     }
     #result {
       margin-top: 1em;
       font-weight: bold;
       font-size: 1.5em;
-      color: yellow;
       white-space: pre-line;
       min-height: 3em;
     }
-    #score {
-      margin-top: 1em;
-      font-size: 1.2em;
-      color: #ccc;
-    }
     .correct {
-      animation: glow 1.5s ease-in-out;
       color: #00ff88;
+      animation: glow 1.5s ease-out;
     }
     .incorrect {
       color: #ff4444;
@@ -90,38 +85,41 @@
     .neutral {
       color: yellow;
     }
-    @keyframes glow {
-      0% {
-        text-shadow: 0 0 5px #00ff88;
-      }
-      50% {
-        text-shadow: 0 0 20px #00ff88;
-      }
-      100% {
-        text-shadow: 0 0 5px #00ff88;
-      }
+    #score {
+      margin-top: 1em;
+      font-size: 1.2em;
+      color: #ccc;
     }
     #thankYou {
-      margin-top: 1.5em;
-      font-style: italic;
+      margin-top: 0.5em;
       color: white;
-      letter-spacing: 0.05em;
+      font-style: italic;
+    }
+    @keyframes glow {
+      0% { text-shadow: 0 0 5px #00ff88; }
+      50% { text-shadow: 0 0 20px #00ff88; }
+      100% { text-shadow: 0 0 5px #00ff88; }
     }
   </style>
 </head>
 <body>
   <div class="card">
-    <h1 style="font-size: 2.2em; color: #228B22; margin-bottom: 0.3em;">⚡💀 Guess the Dead Year 💀⚡</h1>
-    
+    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+      <span style="font-size: 2.2em; color: #228B22;">⚡💀</span>
+      <h1 style="font-size: 2.2em; color: #228B22; margin: 0;">Guess the Dead Year</h1>
+      <span style="font-size: 2.2em; color: #228B22;">💀⚡</span>
+    </div>
+
+    <br />
     <audio id="audio" controls></audio>
     <br />
-    
+
     <button class="generate" onclick="loadRandomTrack()">🎶 Random Tune Generator</button>
     <br />
-    
+
     <input type="text" id="yearGuess" placeholder="Year" maxlength="4" autocomplete="off" />
     <br />
-    
+
     <button class="reveal" onclick="revealAnswer()">Reveal Answer</button>
     <p id="result" class="neutral"></p>
     <p id="score">Score: 0/0 | High Score: 0 | Streak: 0</p>
@@ -134,10 +132,11 @@
   let currentTrack = null;
   let totalAttempts = 0;
   let correctAttempts = 0;
-  let highScore = 0;
   let streak = 0;
 
   let allTracks = [];
+  let siteHighScore = parseInt(localStorage.getItem('gd_site_highscore')) || 0;
+
   async function loadTracksJson() {
     try {
       const res = await fetch('tracks.json');
@@ -168,7 +167,6 @@
     audioEl.load();
     audioEl.play().catch(() => {
       document.getElementById('result').textContent = 'Oops, no good vibes this time. Try again!';
-      return;
     });
 
     document.getElementById('result').textContent = '';
@@ -197,7 +195,6 @@
       correct = true;
       message = '🎉 Correct!';
     } else if (guess.slice(0,2) === correctYear.slice(0,2)) {
-      // Same century, different year
       streak = 0;
       message = 'Wrong Year, Right Century!';
     } else {
@@ -205,8 +202,9 @@
       message = 'Wrong Year!';
     }
 
-    if (correctAttempts > highScore) {
-      highScore = correctAttempts;
+    if (correctAttempts > siteHighScore) {
+      siteHighScore = correctAttempts;
+      localStorage.setItem('gd_site_highscore', siteHighScore);
     }
 
     const resultEl = document.getElementById('result');
@@ -218,7 +216,7 @@
 
   function updateScore() {
     const scoreEl = document.getElementById('score');
-    scoreEl.textContent = `Score: ${correctAttempts}/${totalAttempts} | High Score: ${highScore} | Streak: ${streak}`;
+    scoreEl.textContent = `Score: ${correctAttempts}/${totalAttempts} | High Score: ${siteHighScore} | Streak: ${streak}`;
   }
 </script>
 </body>
