@@ -2,20 +2,23 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Guess the Dead Year!</title>
+  <title>Guess the Dead Year</title>
   <style>
-    body {
+    html, body {
+      height: 100%;
+      margin: 0;
       font-family: 'Comic Sans MS', cursive, sans-serif;
+      background: url('https://cdn.mos.cms.futurecdn.net/HuGGeENt6kGyixe3hT9tnY.jpg') no-repeat center center fixed;
+      background-size: cover;
+      color: #eee;
       text-align: center;
       padding: 2em;
-      background: #000;
-      color: #eee;
     }
     .card {
-      background: rgba(0, 0, 0, 0.8);
+      background: rgba(0, 0, 0, 0.75);
       padding: 2em;
       border-radius: 1em;
-      box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
       max-width: 600px;
       margin: auto;
     }
@@ -31,6 +34,10 @@
       border-radius: 0.5em;
       margin-top: 1em;
       cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      opacity: 0.9;
     }
     .generate {
       background-color: #cc0000;
@@ -54,17 +61,27 @@
       margin-top: 1em;
       font-weight: bold;
       font-size: 1.5em;
-      color: yellow;
       white-space: pre-line;
-      min-height: 3em;
+      min-height: 4em;
+      color: yellow; /* default color */
     }
     #score {
       margin-top: 1em;
-      font-size: 1.2em;
+      font-size: 1.3em;
       color: #ccc;
+    }
+    #streak {
+      margin-top: 0.5em;
+      font-size: 1.2em;
+      color: #8cff00;
     }
     .correct {
       color: #00ff88;
+    }
+    .correct-exclaim {
+      color: #00ff88;
+      font-weight: bold;
+      font-size: 1.7em;
     }
     .incorrect {
       color: #ff4444;
@@ -73,64 +90,119 @@
 </head>
 <body>
   <div class="card">
-    <h1 style="font-size: 3em; color: forestgreen">Guess the Year - Grateful Dead</h1>
+    <h1 style="font-size: 3em; color: #8cff00;">Guess the Dead Year</h1>
     <audio id="audio" controls></audio>
     <br />
-    <button class="generate" onclick="loadRandomTrack()">🎶 Random Tune Generator</button>
+    <button class="generate" id="generateBtn">🎶 Random Tune Generator</button>
     <br />
     <input type="text" id="yearGuess" placeholder="Year" maxlength="4" autocomplete="off" />
     <br />
-    <button class="reveal" onclick="revealAnswer()">Reveal Answer</button>
+    <button class="reveal" id="revealBtn">Reveal Answer</button>
     <p id="result"></p>
     <p id="score">Score: 0/0 | High Score: 0</p>
+    <p id="streak">Current Streak: 0</p>
   </div>
 
-<script>
-  let tracks = [];
-  let currentTrack = null;
-  let totalAttempts = 0;
-  let correctAttempts = 0;
-  let highScore = 0;
+  <script>
+    let tracks = [];
+    let currentTrack = null;
+    let totalAttempts = 0;
+    let correctAttempts = 0;
+    let highScore = 0;
+    let currentStreak = 0;
 
-  async function loadTracks() {
-    const res = await fetch('tracks.json');
-    tracks = await res.json();
-  }
-
-  async function loadRandomTrack() {
-    if (!tracks.length) await loadTracks();
-
-    const track = tracks[Math.floor(Math.random() * tracks.length)];
-    currentTrack = track;
-
-    const audio = document.getElementById('audio');
-    audio.src = `audio/${track.filename}`;
-    audio.load();
-    audio.play().catch(() => {
-      document.getElementById('result').textContent = '🎵 Couldn’t play this tune — try another!';
-    });
-
-    document.getElementById('result').textContent = '';
-  }
-
-  function revealAnswer() {
-    if (!currentTrack) return;
-
-    let guess = document.getElementById('yearGuess').value.trim();
-    if (/^\d{2}$/.test(guess)) {
-      guess = (parseInt(guess) >= 30 ? '19' : '20') + guess;
+    async function loadTracks() {
+      try {
+        const res = await fetch('tracks.json');
+        tracks = await res.json();
+        document.getElementById('result').textContent = '';
+      } catch (e) {
+        document.getElementById('result').textContent = 'Error loading tracks.';
+        console.error('Failed to load tracks.json:', e);
+      }
     }
 
-    totalAttempts++;
-    let correct = guess === currentTrack.year;
+    function getRandomTrack() {
+      if (tracks.length === 0) return null;
+      const randomIndex = Math.floor(Math.random() * tracks.length);
+      return tracks[randomIndex];
+    }
 
-    if (correct) correctAttempts++;
-    if (correctAttempts > highScore) highScore = correctAttempts;
+    function loadRandomTrack() {
+      const track = getRandomTrack();
+      if (!track) {
+        document.getElementById('result').textContent = 'No tracks loaded.';
+        return;
+      }
+      currentTrack = track;
 
-    document.getElementById('result').className = correct ? 'correct' : 'incorrect';
-    document.getElementById('result').textContent = `You guessed: ${guess} — Correct Year: ${currentTrack.year}\n\nTrack: ${currentTrack.track}\nDate: ${currentTrack.date}`;
-    document.getElementById('score').textContent = `Score: ${correctAttempts}/${totalAttempts} | High Score: ${highScore}`;
-  }
-</script>
+      const audioElement = document.getElementById('audio');
+      audioElement.src = track.url;
+      audioElement.load();
+      audioElement.play().catch(() => {
+        document.getElementById('result').textContent = 'Oops, no good vibes this time. Try again!';
+      });
+
+      document.getElementById('result').textContent = '';
+      document.getElementById('yearGuess').value = '';
+    }
+
+    function revealAnswer() {
+      if (!currentTrack) return;
+      let guess = document.getElementById('yearGuess').value.trim();
+
+      // Accept 2-digit year shorthand
+      if (/^\d{2}$/.test(guess)) {
+        const twoDigit = parseInt(guess, 10);
+        guess = (twoDigit >= 30 ? '19' : '20') + guess;
+      }
+
+      const correctYear = currentTrack.year || 'Unknown';
+      const resultEl = document.getElementById('result');
+
+      totalAttempts++;
+      let correct = false;
+
+      if (guess === correctYear) {
+        correctAttempts++;
+        currentStreak++;
+        correct = true;
+      } else {
+        currentStreak = 0;
+      }
+
+      if (correctAttempts > highScore) {
+        highScore = correctAttempts;
+      }
+
+      if (correct) {
+        resultEl.className = 'correct-exclaim';
+        resultEl.textContent = `🎉 You guessed: ${guess} — Correct Year: ${correctYear}! 🎉\n\nTrack: ${currentTrack.track}\nShow: ${currentTrack.title}` +
+          (currentTrack.venue ? `\nVenue: ${currentTrack.venue}` : '');
+      } else {
+        resultEl.className = 'incorrect';
+        resultEl.textContent = `Nope, you guessed: ${guess} — Correct Year: ${correctYear}\n\nTrack: ${currentTrack.track}\nShow: ${currentTrack.title}` +
+          (currentTrack.venue ? `\nVenue: ${currentTrack.venue}` : '');
+      }
+
+      updateScore();
+      updateStreak();
+    }
+
+    function updateScore() {
+      const scoreEl = document.getElementById('score');
+      scoreEl.textContent = `Score: ${correctAttempts}/${totalAttempts} | High Score: ${highScore}`;
+    }
+
+    function updateStreak() {
+      const streakEl = document.getElementById('streak');
+      streakEl.textContent = `Current Streak: ${currentStreak}`;
+    }
+
+    document.getElementById('generateBtn').addEventListener('click', loadRandomTrack);
+    document.getElementById('revealBtn').addEventListener('click', revealAnswer);
+
+    loadTracks();
+  </script>
 </body>
 </html>
