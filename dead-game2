@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Guess the Dead Year!</title>
+  <style>
+    body {
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      text-align: center;
+      padding: 2em;
+      background: #000;
+      color: #eee;
+    }
+    .card {
+      background: rgba(0, 0, 0, 0.8);
+      padding: 2em;
+      border-radius: 1em;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+      max-width: 600px;
+      margin: auto;
+    }
+    audio {
+      width: 100%;
+      margin: 1em 0;
+    }
+    button {
+      padding: 0.6em 1.2em;
+      font-size: 1.1em;
+      color: white;
+      border: none;
+      border-radius: 0.5em;
+      margin-top: 1em;
+      cursor: pointer;
+    }
+    .generate {
+      background-color: #cc0000;
+    }
+    .reveal {
+      background-color: #0066cc;
+    }
+    input {
+      font-size: 1em;
+      padding: 0.5em;
+      border-radius: 0.3em;
+      border: 1px solid #ccc;
+      margin-top: 1em;
+      background-color: white;
+      color: black;
+      text-align: center;
+      font-weight: bold;
+      width: 6em;
+    }
+    #result {
+      margin-top: 1em;
+      font-weight: bold;
+      font-size: 1.5em;
+      color: yellow;
+      white-space: pre-line;
+      min-height: 3em;
+    }
+    #score {
+      margin-top: 1em;
+      font-size: 1.2em;
+      color: #ccc;
+    }
+    .correct {
+      color: #00ff88;
+    }
+    .incorrect {
+      color: #ff4444;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1 style="font-size: 3em; color: forestgreen">Guess the Year - Grateful Dead</h1>
+    <audio id="audio" controls></audio>
+    <br />
+    <button class="generate" onclick="loadRandomTrack()">🎶 Random Tune Generator</button>
+    <br />
+    <input type="text" id="yearGuess" placeholder="Year" maxlength="4" autocomplete="off" />
+    <br />
+    <button class="reveal" onclick="revealAnswer()">Reveal Answer</button>
+    <p id="result"></p>
+    <p id="score">Score: 0/0 | High Score: 0</p>
+  </div>
+
+<script>
+  let tracks = [];
+  let currentTrack = null;
+  let totalAttempts = 0;
+  let correctAttempts = 0;
+  let highScore = 0;
+
+  async function loadTracks() {
+    const res = await fetch('tracks.json');
+    tracks = await res.json();
+  }
+
+  async function loadRandomTrack() {
+    if (!tracks.length) await loadTracks();
+
+    const track = tracks[Math.floor(Math.random() * tracks.length)];
+    currentTrack = track;
+
+    const audio = document.getElementById('audio');
+    audio.src = `audio/${track.filename}`;
+    audio.load();
+    audio.play().catch(() => {
+      document.getElementById('result').textContent = '🎵 Couldn’t play this tune — try another!';
+    });
+
+    document.getElementById('result').textContent = '';
+  }
+
+  function revealAnswer() {
+    if (!currentTrack) return;
+
+    let guess = document.getElementById('yearGuess').value.trim();
+    if (/^\d{2}$/.test(guess)) {
+      guess = (parseInt(guess) >= 30 ? '19' : '20') + guess;
+    }
+
+    totalAttempts++;
+    let correct = guess === currentTrack.year;
+
+    if (correct) correctAttempts++;
+    if (correctAttempts > highScore) highScore = correctAttempts;
+
+    document.getElementById('result').className = correct ? 'correct' : 'incorrect';
+    document.getElementById('result').textContent = `You guessed: ${guess} — Correct Year: ${currentTrack.year}\n\nTrack: ${currentTrack.track}\nDate: ${currentTrack.date}`;
+    document.getElementById('score').textContent = `Score: ${correctAttempts}/${totalAttempts} | High Score: ${highScore}`;
+  }
+</script>
+</body>
+</html>
