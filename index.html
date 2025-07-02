@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Guess the Dead Year!</title>
+  <title>⚡💀 Guess the Dead Year 💀⚡</title>
   <style>
     body {
       font-family: 'Comic Sans MS', cursive, sans-serif;
@@ -19,7 +19,6 @@
       box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
       max-width: 600px;
       margin: auto;
-      font-family: 'Comic Sans MS', cursive, sans-serif;
     }
     audio {
       width: 100%;
@@ -28,12 +27,12 @@
     button {
       padding: 0.6em 1.2em;
       font-size: 1.1em;
-      font-family: 'Comic Sans MS', cursive, sans-serif;
       color: white;
       border: none;
       border-radius: 0.5em;
       margin-top: 1em;
       cursor: pointer;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
     }
     button:hover {
       opacity: 0.9;
@@ -45,10 +44,16 @@
       background-color: #0066cc;
     }
     .donate {
-      background-color: #d12c7a; /* darker pink */
+      background-color: #b30059;
       color: yellow;
       font-family: 'Comic Sans MS', cursive, sans-serif;
+      font-weight: bold;
+      padding: 0.5em 1.5em;
+      font-size: 1.1em;
+      border-radius: 0.5em;
       margin-top: 2em;
+      display: inline-block;
+      text-decoration: none;
     }
     input {
       font-size: 1em;
@@ -61,7 +66,6 @@
       text-align: center;
       font-weight: bold;
       width: 6em;
-      font-family: 'Comic Sans MS', cursive, sans-serif;
     }
     #result {
       margin-top: 1em;
@@ -77,119 +81,147 @@
       color: #ccc;
     }
     .correct {
+      animation: glow 1.5s ease-in-out;
       color: #00ff88;
     }
     .incorrect {
       color: #ff4444;
     }
-    .title {
-      font-size: 2.5em;
-      color: lightgreen;
-      white-space: nowrap;
+    .neutral {
+      color: yellow;
     }
-    .taper {
+    @keyframes glow {
+      0% {
+        text-shadow: 0 0 5px #00ff88;
+      }
+      50% {
+        text-shadow: 0 0 20px #00ff88;
+      }
+      100% {
+        text-shadow: 0 0 5px #00ff88;
+      }
+    }
+    #thankYou {
+      margin-top: 1.5em;
       font-style: italic;
-      font-size: 0.95em;
       color: white;
-      margin-top: 1.2em;
+      letter-spacing: 0.05em;
     }
   </style>
 </head>
 <body>
   <div class="card">
-    <h1 class="title">💀⚡ Guess the Dead Year ⚡💀</h1>
+    <h1 style="font-size: 2.8em; color: #90ee90; margin-bottom: 0.3em;">⚡💀 Guess the Dead Year 💀⚡</h1>
+    
     <audio id="audio" controls></audio>
     <br />
+    
     <button class="generate" onclick="loadRandomTrack()">🎶 Random Tune Generator</button>
     <br />
+    
     <input type="text" id="yearGuess" placeholder="Year" maxlength="4" autocomplete="off" />
     <br />
+    
     <button class="reveal" onclick="revealAnswer()">Reveal Answer</button>
-    <p id="result">Fetching tracks, please wait...</p>
-    <p id="score">Score: 0/0 | High Score: 0</p>
+    <p id="result" class="neutral"></p>
+    <p id="score">Score: 0/0 | High Score: 0 | Streak: 0</p>
 
-    <a href="https://www.gofundme.com/f/our-friend-betty-cantorjackson-could-use-our-help" target="_blank">
-      <button class="donate">Donate to Betty 🌸</button>
-    </a>
-    <p class="taper">Thank a Taper</p>
+    <a href="https://www.gofundme.com/f/our-friend-betty-cantorjackson-could-use-our-help" target="_blank" class="donate">🌸 Donate to Betty</a>
+    <p id="thankYou">Thank a Taper</p>
   </div>
 
 <script>
   let usedShowDates = new Set();
+  let currentShowTitle = null;
   let currentTrack = null;
   let currentDate = null;
   let totalAttempts = 0;
   let correctAttempts = 0;
   let highScore = 0;
+  let streak = 0;
 
-  async function loadTracks() {
+  async function loadTracksJson() {
     const res = await fetch('tracks.json');
     const data = await res.json();
     return data;
   }
 
-  async function loadRandomTrack() {
-    document.getElementById('result').textContent = 'Fetching tracks, please wait...';
+  let allTracks = [];
+  loadTracksJson().then(data => {
+    allTracks = data;
+    document.getElementById('result').textContent = '';
+  }).catch(() => {
+    document.getElementById('result').textContent = 'Could not load tracks. Please refresh!';
+  });
 
-    try {
-      const tracks = await loadTracks();
-      const track = tracks[Math.floor(Math.random() * tracks.length)];
+  function getRandomTrack() {
+    if (allTracks.length === 0) return null;
+    // pick random track
+    const index = Math.floor(Math.random() * allTracks.length);
+    return allTracks[index];
+  }
 
-      currentTrack = track;
-      currentDate = track.date;
-
-      const audio = document.getElementById('audio');
-      audio.src = track.url;
-      audio.load();
-      audio.play().catch(() => {
-        document.getElementById('result').textContent = 'Oops, no good vibes this time. Try again!';
-      });
-
-      document.getElementById('result').textContent = '';
-    } catch (err) {
-      console.error('Track loading error:', err);
-      document.getElementById('result').textContent = 'Oops, no good vibes this time. Try again!';
+  function loadRandomTrack() {
+    const track = getRandomTrack();
+    if (!track) {
+      document.getElementById('result').textContent = 'No tracks found!';
+      return;
     }
+    currentShowTitle = track.title || 'Unknown Show';
+    currentTrack = track;
+    currentDate = track.date || 'Unknown Date';
+
+    const audioEl = document.getElementById('audio');
+    audioEl.src = `audio/${track.filename}`;
+    audioEl.load();
+    audioEl.play().catch(() => {
+      document.getElementById('result').textContent = 'Oops, no good vibes this time. Try again!';
+      return;
+    });
+
+    document.getElementById('result').textContent = '';
+    document.getElementById('result').className = 'neutral';
+    document.getElementById('yearGuess').value = '';
   }
 
   function revealAnswer() {
     if (!currentTrack) return;
     let guess = document.getElementById('yearGuess').value.trim();
 
+    // Accept shorthand 2-digit years, e.g. 95 -> 1995
     if (/^\d{2}$/.test(guess)) {
       const twoDigit = parseInt(guess, 10);
       guess = (twoDigit >= 30 ? '19' : '20') + guess;
     }
 
-    const correctYear = currentTrack.year;
-    const resultEl = document.getElementById('result');
+    const correctYear = currentTrack.year || 'Unknown';
 
     totalAttempts++;
     let correct = false;
 
     if (guess === correctYear) {
       correctAttempts++;
+      streak++;
       correct = true;
+    } else {
+      streak = 0;
     }
 
     if (correctAttempts > highScore) {
       highScore = correctAttempts;
     }
 
+    const resultEl = document.getElementById('result');
     resultEl.className = correct ? 'correct' : 'incorrect';
-    resultEl.textContent = correct
-      ? `You got it! 🎯\n\nYear: ${correctYear}\nDate: ${currentDate}\nTrack: ${currentTrack.track}`
-      : `You guessed: ${guess} — Correct Year: ${correctYear}\n\nDate: ${currentDate}\nTrack: ${currentTrack.track}`;
+    resultEl.textContent = `${correct ? '🎉 Correct!' : '❌ Wrong!'} You guessed: ${guess} — Correct Year: ${correctYear}\n\nTrack: ${currentTrack.track}\nShow: ${currentShowTitle}\nDate: ${currentDate}`;
 
     updateScore();
   }
 
   function updateScore() {
     const scoreEl = document.getElementById('score');
-    scoreEl.textContent = `Score: ${correctAttempts}/${totalAttempts} | High Score: ${highScore}`;
+    scoreEl.textContent = `Score: ${correctAttempts}/${totalAttempts} | High Score: ${highScore} | Streak: ${streak}`;
   }
-
-  loadRandomTrack();
 </script>
 </body>
 </html>
