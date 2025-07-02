@@ -111,7 +111,7 @@
 </head>
 <body>
   <div class="card">
-    <h1 style="font-size: 2.8em; color: #90ee90; margin-bottom: 0.3em;">⚡💀 Guess the Dead Year 💀⚡</h1>
+    <h1 style="font-size: 2.2em; color: #228B22; margin-bottom: 0.3em;">⚡💀 Guess the Dead Year 💀⚡</h1>
     
     <audio id="audio" controls></audio>
     <br />
@@ -131,32 +131,26 @@
   </div>
 
 <script>
-  let usedShowDates = new Set();
-  let currentShowTitle = null;
   let currentTrack = null;
-  let currentDate = null;
   let totalAttempts = 0;
   let correctAttempts = 0;
   let highScore = 0;
   let streak = 0;
 
-  async function loadTracksJson() {
-    const res = await fetch('tracks.json');
-    const data = await res.json();
-    return data;
-  }
-
   let allTracks = [];
-  loadTracksJson().then(data => {
-    allTracks = data;
-    document.getElementById('result').textContent = '';
-  }).catch(() => {
-    document.getElementById('result').textContent = 'Could not load tracks. Please refresh!';
-  });
+  async function loadTracksJson() {
+    try {
+      const res = await fetch('tracks.json');
+      allTracks = await res.json();
+      document.getElementById('result').textContent = '';
+    } catch {
+      document.getElementById('result').textContent = 'Could not load tracks. Please refresh!';
+    }
+  }
+  loadTracksJson();
 
   function getRandomTrack() {
     if (allTracks.length === 0) return null;
-    // pick random track
     const index = Math.floor(Math.random() * allTracks.length);
     return allTracks[index];
   }
@@ -167,9 +161,7 @@
       document.getElementById('result').textContent = 'No tracks found!';
       return;
     }
-    currentShowTitle = track.title || 'Unknown Show';
     currentTrack = track;
-    currentDate = track.date || 'Unknown Date';
 
     const audioEl = document.getElementById('audio');
     audioEl.src = `audio/${track.filename}`;
@@ -188,7 +180,6 @@
     if (!currentTrack) return;
     let guess = document.getElementById('yearGuess').value.trim();
 
-    // Accept shorthand 2-digit years, e.g. 95 -> 1995
     if (/^\d{2}$/.test(guess)) {
       const twoDigit = parseInt(guess, 10);
       guess = (twoDigit >= 30 ? '19' : '20') + guess;
@@ -198,13 +189,20 @@
 
     totalAttempts++;
     let correct = false;
+    let message = '';
 
     if (guess === correctYear) {
       correctAttempts++;
       streak++;
       correct = true;
+      message = '🎉 Correct!';
+    } else if (guess.slice(0,2) === correctYear.slice(0,2)) {
+      // Same century, different year
+      streak = 0;
+      message = 'Wrong Year, Right Century!';
     } else {
       streak = 0;
+      message = 'Wrong Year!';
     }
 
     if (correctAttempts > highScore) {
@@ -213,7 +211,7 @@
 
     const resultEl = document.getElementById('result');
     resultEl.className = correct ? 'correct' : 'incorrect';
-    resultEl.textContent = `${correct ? '🎉 Correct!' : '❌ Wrong!'} You guessed: ${guess} — Correct Year: ${correctYear}\n\nTrack: ${currentTrack.track}\nShow: ${currentShowTitle}\nDate: ${currentDate}`;
+    resultEl.textContent = `${message} You guessed: ${guess} — Correct Year: ${correctYear}\n\nSong: ${currentTrack.track}\nDate: ${currentTrack.date}`;
 
     updateScore();
   }
