@@ -2,99 +2,227 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Grateful Dead Guessing Game</title>
-  
-  <!-- ✅ Added Comic Neue font -->
-  <link href="https://fonts.googleapis.com/css2?family=Comic+Neue&display=swap" rel="stylesheet">
-  
+  <title>Guess the Dead Year</title>
   <style>
     body {
-      font-family: 'Comic Neue', cursive; /* ✅ Applied Comic Neue globally */
-      background-color: #f8f8f0;
-      color: #333;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
       text-align: center;
-      padding: 2rem;
+      padding: 2em;
+      background: url('https://cdn.mos.cms.futurecdn.net/HuGGeENt6kGyixe3hT9tnY.jpg');
+      background-color: #111;
+      color: #eee;
+    }
+    .card {
+      background: rgba(0, 0, 0, 0.8);
+      padding: 2em;
+      border-radius: 1em;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+      max-width: 600px;
+      margin: auto;
     }
     audio {
-      margin-top: 20px;
+      width: 100%;
+      margin: 1em 0;
     }
-    input, button {
-      font-family: inherit;
-      font-size: 1rem;
-      padding: 0.5em;
-      margin: 0.5em;
+    button {
+      padding: 0.6em 1.2em;
+      font-size: 1.1em;
+      color: white;
+      border: none;
+      border-radius: 0.5em;
+      margin-top: 1em;
+      cursor: pointer;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
     }
-
-    /* ✅ Smaller Donate section */
+    button:hover {
+      opacity: 0.9;
+    }
+    .generate {
+      background-color: #cc0000;
+    }
+    .reveal {
+      background-color: #0066cc;
+    }
     .donate {
+      display: inline-block;
       margin-top: 2em;
-      font-size: 80%;
+      background-color: #d63384;
+      color: yellow;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 1.2em;
+      padding: 0.5em 1.5em;
+      border-radius: 0.5em;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
     }
-    .donate button {
-      font-size: 80%;
+    input {
+      font-size: 1em;
+      padding: 0.5em;
+      border-radius: 0.3em;
+      border: 1px solid #ccc;
+      margin-top: 1em;
+      background-color: white;
+      color: black;
+      text-align: center;
+      font-weight: bold;
+      width: 6em;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
     }
-
-    .footer-link {
-      font-size: 0.6rem;
-      margin-top: 2rem;
-      display: block;
-      color: #888;
+    #result {
+      margin-top: 1em;
+      font-weight: bold;
+      font-size: 1.5em;
+      white-space: pre-line;
+      min-height: 3em;
+    }
+    .correct {
+      color: #00ff88;
+      animation: glow 1.5s ease-out;
+    }
+    .incorrect {
+      color: #ff4444;
+    }
+    .neutral {
+      color: yellow;
+    }
+    #score {
+      margin-top: 1em;
+      font-size: 1.2em;
+      color: #ccc;
+    }
+    #thankYou {
+      margin-top: 0.5em;
+      color: white;
+      font-style: italic;
+    }
+    @keyframes glow {
+      0% { text-shadow: 0 0 5px #00ff88; }
+      50% { text-shadow: 0 0 20px #00ff88; }
+      100% { text-shadow: 0 0 5px #00ff88; }
     }
   </style>
 </head>
 <body>
-  <h1>Grateful Dead Guessing Game 🎶</h1>
-  <p>Guess the <strong>year</strong> this song was played</p>
+  <div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+      <span style="font-size: 2.2em; color: #228B22;">⚡💀</span>
+      <h1 style="font-size: 2.2em; color: #228B22; margin: 0;">Guess the Dead Year</h1>
+      <span style="font-size: 2.2em; color: #228B22;">💀⚡</span>
+    </div>
 
-  <audio id="audioPlayer" controls></audio>
+    <br />
+    <audio id="audio" controls></audio>
+    <br />
 
-  <div>
-    <input type="text" id="yearGuess" placeholder="Enter Year (e.g. 1973)" />
-    <button onclick="checkGuess()">Guess</button>
+    <button class="generate" onclick="loadRandomTrack()">Random Tune Generator</button>
+    <br />
+
+    <input type="text" id="yearGuess" placeholder="Year" maxlength="4" autocomplete="off" />
+    <br />
+
+    <button class="reveal" onclick="revealAnswer()">Reveal Answer</button>
+    <p id="result" class="neutral"></p>
+    <p id="score">Score: 0/0 | High Score: 0 | Streak: 0</p>
+
+    <a href="https://www.gofundme.com/f/our-friend-betty-cantorjackson-could-use-our-help" target="_blank" class="donate">🌸 Donate to Betty</a>
+    <p id="thankYou">Thank a Taper</p>
   </div>
 
-  <p id="feedback"></p>
-  <button onclick="loadRandomTrack()">Next Song</button>
+<script>
+  let currentTrack = null;
+  let totalAttempts = 0;
+  let correctAttempts = 0;
+  let streak = 0;
 
-  <div class="donate">
-    <p>Love this? <a href="https://www.bettypcantor.org/donate" target="_blank">Donate to Betty</a></p>
-    <button onclick="window.open('https://www.bettypcantor.org/donate','_blank')">Donate</button>
-  </div>
+  let allTracks = [];
+  let siteHighScore = parseInt(localStorage.getItem('gd_site_highscore')) || 0;
 
-  <a class="footer-link" href="https://github.com/Gignac77" target="_blank">Built with Love by Matt</a>
+  async function loadTracksJson() {
+    try {
+      const res = await fetch('tracks.json');
+      allTracks = await res.json();
+      document.getElementById('result').textContent = '';
+    } catch {
+      document.getElementById('result').textContent = 'Could not load tracks. Please refresh!';
+    }
+  }
+  loadTracksJson();
 
-  <script>
-    let tracks = [];
-    let currentTrack = null;
+  function getRandomTrack() {
+    if (allTracks.length === 0) return null;
+    const index = Math.floor(Math.random() * allTracks.length);
+    return allTracks[index];
+  }
 
-    fetch('tracks.json')
-      .then(res => res.json())
-      .then(data => {
-        tracks = data;
-        loadRandomTrack();
-      });
+  function loadRandomTrack() {
+    const track = getRandomTrack();
+    if (!track) {
+      document.getElementById('result').textContent = 'No tracks found!';
+      return;
+    }
+    currentTrack = track;
 
-    function loadRandomTrack() {
-      const index = Math.floor(Math.random() * tracks.length);
-      currentTrack = tracks[index];
-      const audioPlayer = document.getElementById('audioPlayer');
-      audioPlayer.src = currentTrack.url;
-      document.getElementById('feedback').innerText = '';
-      document.getElementById('yearGuess').value = '';
+    const audioEl = document.getElementById('audio');
+    audioEl.src = `audio/${track.filename}`;
+    audioEl.load();
+    audioEl.play().catch(() => {
+      document.getElementById('result').textContent = 'Oops, no good vibes this time. Try again!';
+    });
+
+    document.getElementById('result').textContent = '';
+    document.getElementById('result').className = 'neutral';
+    document.getElementById('yearGuess').value = '';
+  }
+
+  function revealAnswer() {
+    if (!currentTrack) return;
+    let guess = document.getElementById('yearGuess').value.trim();
+
+    if (/^\d{2}$/.test(guess)) {
+      const twoDigit = parseInt(guess, 10);
+      guess = (twoDigit >= 30 ? '19' : '20') + guess;
     }
 
-    function checkGuess() {
-      const userGuess = document.getElementById('yearGuess').value.trim();
-      const correctYear = currentTrack.year;
-      const feedback = document.getElementById('feedback');
+    const correctYear = currentTrack.year || 'Unknown';
 
-      if (userGuess === correctYear) {
-        feedback.innerText = `✅ Correct! "${currentTrack.track}" was played in ${correctYear}.`;
-      } else {
-        feedback.innerText = `❌ Not Quite! "${currentTrack.track}" was played in ${correctYear}.`; // ✅ Changed message
-      }
+    totalAttempts++;
+    let correct = false;
+    let message = '';
+
+    if (guess === correctYear) {
+      correctAttempts++;
+      streak++;
+      correct = true;
+      message = '🎉 Correct!';
+    } else if (guess.slice(0,2) === correctYear.slice(0,2)) {
+      streak = 0;
+      message = 'Wrong Year, Right Century!';
+    } else {
+      streak = 0;
+      message = 'Wrong Year!';
     }
-  </script>
+
+    if (correctAttempts > siteHighScore) {
+      siteHighScore = correctAttempts;
+      localStorage.setItem('gd_site_highscore', siteHighScore);
+    }
+
+    const resultEl = document.getElementById('result');
+    resultEl.className = correct ? 'correct' : 'incorrect';
+    resultEl.textContent = `${message} You guessed: ${guess} — Correct Year: ${correctYear}\n\nSong: ${currentTrack.track}\nDate: ${currentTrack.date}`;
+
+    updateScore();
+  }
+
+  function updateScore() {
+    const scoreEl = document.getElementById('score');
+    scoreEl.textContent = `Score: ${correctAttempts}/${totalAttempts} | High Score: ${siteHighScore} | Streak: ${streak}`;
+  }
+</script>
+  <footer style="font-size: 0.8em; text-align: center; margin-top: 2em; color: #ccc;">
+  <a href="https://github.com/Gignac77" target="_blank" rel="noopener noreferrer" style="color: #ccc; text-decoration: none;">
+    Built with Love by Matt - 7/1/25
+  </a>
+</footer>
 </body>
 </html>
