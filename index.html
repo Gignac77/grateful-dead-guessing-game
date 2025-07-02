@@ -5,7 +5,6 @@
   <title>Guess the Dead Year</title>
   <link href="https://fonts.googleapis.com/css2?family=Comic+Neue&display=swap" rel="stylesheet" />
   <style>
-    /* Base & container styling */
     body {
       font-family: 'Comic Neue', cursive;
       text-align: center;
@@ -29,37 +28,36 @@
       box-sizing: border-box;
     }
 
-    /* Title with emojis and layout */
     .title-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
       width: 100%;
       user-select: none;
+      flex-wrap: nowrap;
     }
     .title-row span, .title-row h1 {
-      font-size: 2.2em;
-      color: #1E4D1E; /* Darker forest green */
+      font-size: 2.5em;
       white-space: nowrap;
     }
     .title-row h1 {
+      color: yellow;
+      font-weight: 900;
+      margin: 0 0.2em;
       flex-grow: 1;
-      margin: 0 0.3em;
-      font-weight: 700;
       text-align: center;
     }
+    .title-row span {
+      color: yellow;
+    }
 
-    /* Audio styling */
     audio {
       width: 100%;
       margin: 1em 0 0.8em 0;
-      outline-offset: 4px;
-      outline: 2px solid #228B22;
-      border-radius: 6px;
-      background: #000;
+      border: none;
+      background: none;
     }
 
-    /* Buttons & inputs */
     button, input[type="text"] {
       font-family: 'Comic Neue', cursive;
       font-size: 1.1em;
@@ -90,6 +88,17 @@
       margin-left: auto;
       margin-right: auto;
     }
+
+    .toggle-timer {
+      background-color: #228B22;
+      color: white;
+      font-size: 0.75em;
+      padding: 0.5em 1em;
+      margin: 0.5em auto 1em auto;
+      max-width: 150px;
+      display: block;
+    }
+
     .reveal {
       background-color: #0066cc;
       color: white;
@@ -99,14 +108,7 @@
       margin-left: auto;
       margin-right: auto;
     }
-    .toggle-timer {
-      background-color: #228B22;
-      color: white;
-      width: 100%;
-      max-width: 300px;
-      display: block;
-      margin: 1em auto 0.5em auto;
-    }
+
     input[type="text"] {
       width: 6em;
       font-weight: bold;
@@ -116,7 +118,6 @@
       border: 1px solid #ccc;
     }
 
-    /* Timer bar container & fill */
     #timerContainer {
       width: 100%;
       max-width: 300px;
@@ -125,17 +126,16 @@
       border-radius: 6px;
       margin: 0.8em auto 1.2em auto;
       overflow: hidden;
-      display: none; /* hidden by default */
+      display: none;
       box-shadow: inset 0 0 6px #000;
     }
     #timerBar {
       height: 100%;
       width: 100%;
-      background-color: #28a745; /* start green */
+      background-color: #28a745;
       transition: width 0.1s linear;
     }
 
-    /* Result & score */
     #result {
       margin-top: 1em;
       font-weight: bold;
@@ -157,27 +157,13 @@
     #score {
       margin-top: 1em;
       font-size: 1.2em;
-      color: #ccc;
-    }
-    #thankYou {
-      margin-top: 1.5em;
       color: white;
-      font-style: italic;
-      user-select: none;
     }
 
-    /* Glow animation for correct */
-    @keyframes glow {
-      0% { text-shadow: 0 0 5px #00ff88; }
-      50% { text-shadow: 0 0 20px #00ff88; }
-      100% { text-shadow: 0 0 5px #00ff88; }
-    }
-
-    /* Donate button */
     .donate {
       display: inline-block;
       margin-top: 2em;
-      background-color: #b21f58; /* darker saturated pink */
+      background-color: #b21f58;
       color: yellow;
       text-decoration: none;
       font-weight: bold;
@@ -193,7 +179,19 @@
       text-decoration: none;
     }
 
-    /* Footer small link */
+    #thankYou {
+      margin-top: 1.5em;
+      color: white;
+      font-style: italic;
+      user-select: none;
+    }
+
+    @keyframes glow {
+      0% { text-shadow: 0 0 5px #00ff88; }
+      50% { text-shadow: 0 0 20px #00ff88; }
+      100% { text-shadow: 0 0 5px #00ff88; }
+    }
+
     footer {
       font-size: 0.75em;
       text-align: center;
@@ -209,35 +207,21 @@
       text-decoration: underline;
     }
 
-    /* Responsive & mobile friendly */
     @media (max-width: 480px) {
-      body {
-        padding: 1em 0.5em;
-      }
-      .card {
-        padding: 1.5em 1em;
-      }
       .title-row span, .title-row h1 {
         font-size: 1.6em;
       }
       button, input[type="text"] {
-        font-size: 1.3em;
-        padding: 1em 1.5em;
+        font-size: 1.2em;
         width: 100%;
         max-width: none;
-      }
-      #timerContainer {
-        max-width: 100%;
-      }
-      #score {
-        font-size: 1.1em;
       }
     }
   </style>
 </head>
 <body>
   <div class="card">
-    <div class="title-row" aria-label="Page Title">
+    <div class="title-row">
       <span>⚡💀</span>
       <h1>Guess the Dead Year</h1>
       <span>💀⚡</span>
@@ -250,23 +234,20 @@
     <button class="generate" onclick="loadRandomTrack()">Random Tune Generator</button>
     <button class="toggle-timer" id="toggleTimerBtn" aria-pressed="false" onclick="toggleTimerMode()">Timed Mode: OFF</button>
 
-    <div id="timerContainer" aria-label="Timer countdown">
-      <div id="timerBar"></div>
-    </div>
+    <div id="timerContainer"><div id="timerBar"></div></div>
 
-    <input type="text" id="yearGuess" placeholder="Year" maxlength="4" autocomplete="off" aria-label="Guess the year" />
+    <input type="text" id="yearGuess" placeholder="Year" maxlength="4" autocomplete="off" />
     <br />
-
     <button class="reveal" onclick="revealAnswer()">Reveal Answer</button>
-    <p id="result" class="neutral" aria-live="polite"></p>
+    <p id="result" class="neutral"></p>
     <p id="score">Score: 0/0 | High Score: 0 | Streak: 0</p>
 
-    <a href="https://www.gofundme.com/f/our-friend-betty-cantorjackson-could-use-our-help" target="_blank" rel="noopener noreferrer" class="donate" aria-label="Donate to Betty 🌸">🌸 Donate to Betty</a>
+    <a href="https://www.gofundme.com/f/our-friend-betty-cantorjackson-could-use-our-help" target="_blank" class="donate">🌸 Donate to Betty</a>
     <p id="thankYou">Thank a Taper</p>
   </div>
 
   <footer>
-    <a href="https://github.com/Gignac77" target="_blank" rel="noopener noreferrer">Built with Love by Matt - 7/1/25</a>
+    <a href="https://github.com/Gignac77" target="_blank">Built with Love by Matt - 7/1/25</a>
   </footer>
 
 <script>
@@ -275,150 +256,89 @@
   let correctAttempts = 0;
   let streak = 0;
   let timerActive = false;
-  let timerDuration = 15; // seconds for countdown
+  let timerDuration = 20;
   let timerInterval = null;
-  let timerStartTimestamp = null;
 
   let allTracks = [];
   let siteHighScore = parseInt(localStorage.getItem('gd_site_highscore')) || 0;
 
-  // Load tracks.json on startup
   async function loadTracksJson() {
     try {
       const res = await fetch('tracks.json');
       allTracks = await res.json();
-      document.getElementById('result').textContent = '';
     } catch {
       document.getElementById('result').textContent = 'Could not load tracks. Please refresh!';
     }
   }
   loadTracksJson();
 
-  // Pick a random track from allTracks
   function getRandomTrack() {
-    if (allTracks.length === 0) return null;
     const index = Math.floor(Math.random() * allTracks.length);
     return allTracks[index];
   }
 
-  // Load a random track & start timer if enabled
   function loadRandomTrack() {
-    const track = getRandomTrack();
-    if (!track) {
-      document.getElementById('result').textContent = 'No tracks found!';
-      return;
-    }
-    currentTrack = track;
-
-    // Setup audio source
+    currentTrack = getRandomTrack();
     const audioEl = document.getElementById('audio');
-    audioEl.src = `audio/${track.filename}`;
+    audioEl.src = `audio/${currentTrack.filename}`;
     audioEl.load();
     audioEl.play().catch(() => {
       document.getElementById('result').textContent = 'Oops, no good vibes this time. Try again!';
     });
 
-    // Reset UI
     document.getElementById('result').textContent = '';
     document.getElementById('result').className = 'neutral';
     document.getElementById('yearGuess').value = '';
     enableInput(true);
 
-    if(timerActive){
-      startTimer();
-    } else {
-      stopTimer();
-    }
+    if (timerActive) startTimer();
+    else stopTimer();
   }
 
-  // Enable or disable guess input and reveal button
   function enableInput(enabled) {
     document.getElementById('yearGuess').disabled = !enabled;
     document.querySelector('.reveal').disabled = !enabled;
   }
 
-  // Timer logic: start timer bar & countdown
   function startTimer() {
-    stopTimer(); // clear any existing timer
-    timerStartTimestamp = Date.now();
-    const timerContainer = document.getElementById('timerContainer');
+    stopTimer();
+    let remaining = timerDuration;
+    document.getElementById('timerContainer').style.display = 'block';
     const timerBar = document.getElementById('timerBar');
-    timerContainer.style.display = 'block';
-    updateTimerBar(100);
 
     timerInterval = setInterval(() => {
-      const elapsed = (Date.now() - timerStartTimestamp) / 1000;
-      const percentLeft = Math.max(0, ((timerDuration - elapsed) / timerDuration) * 100);
-      updateTimerBar(percentLeft);
-
-      if (percentLeft <= 0) {
+      remaining--;
+      const percent = (remaining / timerDuration) * 100;
+      timerBar.style.width = percent + '%';
+      timerBar.style.backgroundColor = percent > 50 ? '#28a745' : percent > 25 ? '#ffc107' : '#dc3545';
+      if (remaining <= 0) {
         clearInterval(timerInterval);
-        timerInterval = null;
-        timerContainer.style.display = 'none';
-        // Auto reveal answer and disable input
         revealAnswer(true);
         enableInput(false);
+        document.getElementById('timerContainer').style.display = 'none';
       }
-    }, 100);
+    }, 1000);
   }
 
-  // Stop and hide timer
   function stopTimer() {
-    if (timerInterval) {
-      clearInterval(timerInterval);
-      timerInterval = null;
-    }
-    const timerContainer = document.getElementById('timerContainer');
-    timerContainer.style.display = 'none';
+    clearInterval(timerInterval);
+    document.getElementById('timerContainer').style.display = 'none';
   }
 
-  // Update timer bar width and color smoothly green→yellow→red
-  function updateTimerBar(percent) {
-    const timerBar = document.getElementById('timerBar');
-    timerBar.style.width = percent + '%';
-
-    // Color gradient green → yellow → red based on percent left
-    // 100% = green (#28a745), 50% = yellow (#ffc107), 0% = red (#dc3545)
-    let color;
-    if (percent > 50) {
-      // interpolate green to yellow
-      let ratio = (percent - 50) / 50;
-      // green: #28a745 rgb(40,167,69)
-      // yellow: #ffc107 rgb(255,193,7)
-      let r = Math.round(255 - (255 - 40) * ratio);
-      let g = Math.round(193 + (167 - 193) * ratio);
-      let b = Math.round(7 + (69 - 7) * ratio);
-      color = `rgb(${r},${g},${b})`;
-    } else {
-      // interpolate yellow to red
-      let ratio = percent / 50;
-      // yellow: rgb(255,193,7)
-      // red: rgb(220,53,69)
-      let r = Math.round(220 + (255 - 220) * ratio);
-      let g = Math.round(53 + (193 - 53) * ratio);
-      let b = Math.round(69 + (7 - 69) * ratio);
-      color = `rgb(${r},${g},${b})`;
-    }
-    timerBar.style.backgroundColor = color;
+  function toggleTimerMode() {
+    timerActive = !timerActive;
+    const btn = document.getElementById('toggleTimerBtn');
+    btn.textContent = `Timed Mode: ${timerActive ? 'ON' : 'OFF'}`;
+    btn.setAttribute('aria-pressed', timerActive ? 'true' : 'false');
+    if (!timerActive) stopTimer();
   }
 
-  // Reveal answer and check guess correctness
-  // autoReveal param true if time ran out (no user input)
   function revealAnswer(autoReveal = false) {
     if (!currentTrack) return;
     let guess = document.getElementById('yearGuess').value.trim();
-
-    // If auto reveal from timer and no guess entered, mark as incorrect
-    if(autoReveal && guess === '') {
-      guess = 'No guess';
-    }
-
-    // Handle 2-digit guess, expand to 4-digit year
     if (/^\d{2}$/.test(guess)) {
-      const twoDigit = parseInt(guess, 10);
-      guess = (twoDigit >= 30 ? '19' : '20') + guess;
+      guess = (parseInt(guess, 10) >= 30 ? '19' : '20') + guess;
     }
-
     const correctYear = currentTrack.year || 'Unknown';
 
     totalAttempts++;
@@ -430,7 +350,7 @@
       streak++;
       correct = true;
       message = '🎉 Correct!';
-    } else if (guess.slice(0,2) === correctYear.slice(0,2)) {
+    } else if (guess.slice(0, 2) === correctYear.slice(0, 2)) {
       streak = 0;
       message = 'Wrong Year, Right Century!';
     } else {
@@ -443,38 +363,17 @@
       localStorage.setItem('gd_site_highscore', siteHighScore);
     }
 
-    const resultEl = document.getElementById('result');
-    resultEl.className = correct ? 'correct' : 'incorrect';
-
-    // Show only song title and date, no venue
-    resultEl.textContent = `${message} You guessed: ${guess} — Correct Year: ${correctYear}\n\nSong: ${currentTrack.track}\nDate: ${currentTrack.date}`;
+    document.getElementById('result').className = correct ? 'correct' : 'incorrect';
+    document.getElementById('result').textContent =
+      `${message} You guessed: ${guess} — Correct Year: ${correctYear}\n\nSong: ${currentTrack.track}\nDate: ${currentTrack.date}`;
 
     updateScore();
-
-    // Disable input & stop timer on reveal
-    enableInput(false);
     stopTimer();
+    enableInput(false);
   }
 
-  // Update scoreboard text
   function updateScore() {
-    const scoreEl = document.getElementById('score');
-    scoreEl.textContent = `Score: ${correctAttempts}/${totalAttempts} | High Score: ${siteHighScore} | Streak: ${streak}`;
-  }
-
-  // Toggle timed mode on/off
-  function toggleTimerMode() {
-    timerActive = !timerActive;
-    const btn = document.getElementById('toggleTimerBtn');
-    btn.textContent = `Timed Mode: ${timerActive ? 'ON' : 'OFF'}`;
-    btn.setAttribute('aria-pressed', timerActive ? 'true' : 'false');
-
-    if(timerActive) {
-      // If a track is loaded, start the timer now
-      if(currentTrack) startTimer();
-    } else {
-      stopTimer();
-    }
+    document.getElementById('score').textContent = `Score: ${correctAttempts}/${totalAttempts} | High Score: ${siteHighScore} | Streak: ${streak}`;
   }
 </script>
 </body>
