@@ -347,4 +347,135 @@
     updateTimerBar(100);
 
     timerInterval = setInterval(() => {
-      const elapsed = (Date.now() - timerStart
+      const elapsed = (Date.now() - timerStartTimestamp) / 1000;
+      const percentLeft = Math.max(0, ((timerDuration - elapsed) / timerDuration) * 100);
+      updateTimerBar(percentLeft);
+
+      if (percentLeft <= 0) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        timerContainer.style.display = 'none';
+        // Auto reveal answer and disable input
+        revealAnswer(true);
+        enableInput(false);
+      }
+    }, 100);
+  }
+
+  // Stop and hide timer
+  function stopTimer() {
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+    const timerContainer = document.getElementById('timerContainer');
+    timerContainer.style.display = 'none';
+  }
+
+  // Update timer bar width and color smoothly green→yellow→red
+  function updateTimerBar(percent) {
+    const timerBar = document.getElementById('timerBar');
+    timerBar.style.width = percent + '%';
+
+    // Color gradient green → yellow → red based on percent left
+    // 100% = green (#28a745), 50% = yellow (#ffc107), 0% = red (#dc3545)
+    let color;
+    if (percent > 50) {
+      // interpolate green to yellow
+      let ratio = (percent - 50) / 50;
+      // green: #28a745 rgb(40,167,69)
+      // yellow: #ffc107 rgb(255,193,7)
+      let r = Math.round(255 - (255 - 40) * ratio);
+      let g = Math.round(193 + (167 - 193) * ratio);
+      let b = Math.round(7 + (69 - 7) * ratio);
+      color = `rgb(${r},${g},${b})`;
+    } else {
+      // interpolate yellow to red
+      let ratio = percent / 50;
+      // yellow: rgb(255,193,7)
+      // red: rgb(220,53,69)
+      let r = Math.round(220 + (255 - 220) * ratio);
+      let g = Math.round(53 + (193 - 53) * ratio);
+      let b = Math.round(69 + (7 - 69) * ratio);
+      color = `rgb(${r},${g},${b})`;
+    }
+    timerBar.style.backgroundColor = color;
+  }
+
+  // Reveal answer and check guess correctness
+  // autoReveal param true if time ran out (no user input)
+  function revealAnswer(autoReveal = false) {
+    if (!currentTrack) return;
+    let guess = document.getElementById('yearGuess').value.trim();
+
+    // If auto reveal from timer and no guess entered, mark as incorrect
+    if(autoReveal && guess === '') {
+      guess = 'No guess';
+    }
+
+    // Handle 2-digit guess, expand to 4-digit year
+    if (/^\d{2}$/.test(guess)) {
+      const twoDigit = parseInt(guess, 10);
+      guess = (twoDigit >= 30 ? '19' : '20') + guess;
+    }
+
+    const correctYear = currentTrack.year || 'Unknown';
+
+    totalAttempts++;
+    let correct = false;
+    let message = '';
+
+    if (guess === correctYear) {
+      correctAttempts++;
+      streak++;
+      correct = true;
+      message = '🎉 Correct!';
+    } else if (guess.slice(0,2) === correctYear.slice(0,2)) {
+      streak = 0;
+      message = 'Wrong Year, Right Century!';
+    } else {
+      streak = 0;
+      message = 'Not Quite!';
+    }
+
+    if (correctAttempts > siteHighScore) {
+      siteHighScore = correctAttempts;
+      localStorage.setItem('gd_site_highscore', siteHighScore);
+    }
+
+    const resultEl = document.getElementById('result');
+    resultEl.className = correct ? 'correct' : 'incorrect';
+
+    // Show only song title and date, no venue
+    resultEl.textContent = `${message} You guessed: ${guess} — Correct Year: ${correctYear}\n\nSong: ${currentTrack.track}\nDate: ${currentTrack.date}`;
+
+    updateScore();
+
+    // Disable input & stop timer on reveal
+    enableInput(false);
+    stopTimer();
+  }
+
+  // Update scoreboard text
+  function updateScore() {
+    const scoreEl = document.getElementById('score');
+    scoreEl.textContent = `Score: ${correctAttempts}/${totalAttempts} | High Score: ${siteHighScore} | Streak: ${streak}`;
+  }
+
+  // Toggle timed mode on/off
+  function toggleTimerMode() {
+    timerActive = !timerActive;
+    const btn = document.getElementById('toggleTimerBtn');
+    btn.textContent = `Timed Mode: ${timerActive ? 'ON' : 'OFF'}`;
+    btn.setAttribute('aria-pressed', timerActive ? 'true' : 'false');
+
+    if(timerActive) {
+      // If a track is loaded, start the timer now
+      if(currentTrack) startTimer();
+    } else {
+      stopTimer();
+    }
+  }
+</script>
+</body>
+</html>
