@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+\<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -92,10 +92,16 @@
       width: 6em;
       font-family: 'Comic Neue', cursive;
     }
-    #result {
+    #resultContainer {
       margin-top: 1em;
+      padding: 1em;
+      border: 2px solid #444;
+      border-radius: 0.5em;
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+    #result {
       font-weight: bold;
-      font-size: 1.5em;
+      font-size: 1.4em;
       white-space: pre-line;
       min-height: 3em;
     }
@@ -111,7 +117,7 @@
     }
     #score {
       margin-top: 1em;
-      font-size: 1.2em;
+      font-size: 1.1em;
       color: #fff;
     }
     #thankYou {
@@ -139,12 +145,6 @@
       font-size: 1em;
       font-family: 'Comic Neue', cursive;
     }
-    #message {
-      color: #ffcc00;
-      font-size: 0.9em;
-      margin-top: 0.5em;
-      display: none;
-    }
   </style>
 </head>
 <body>
@@ -156,7 +156,6 @@
     </div>
     <p style="font-style: italic; margin-top: 0.5em; font-size: 0.9em;">1965–1995</p>
 
-    <br />
     <audio id="audio" controls></audio>
     <br />
 
@@ -180,9 +179,10 @@
       <option value="199">1990s</option>
     </select>
 
-    <p id="result" class="neutral"></p>
-    <p id="score">Score: 0/0 | High Score: 0 | Streak: 0</p>
-    <p id="message"></p>
+    <div id="resultContainer">
+      <p id="result" class="neutral"></p>
+      <p id="score">Score: 0/0 | High Score: 0 | Streak: 0</p>
+    </div>
 
     <a href="https://www.gofundme.com/f/our-friend-betty-cantorjackson-could-use-our-help" target="_blank" class="donate">🌸 Donate to Betty</a>
     <br />
@@ -195,13 +195,13 @@
   let totalAttempts = 0;
   let correctAttempts = 0;
   let streak = 0;
+  let hasGuessed = false;
   let siteHighScore = parseInt(localStorage.getItem('gd_site_highscore')) || 0;
   let allTracks = [];
   let filteredTracks = [];
   let timedMode = false;
   let timer = null;
   let timeLeft = 20;
-  let answerRevealed = false;
 
   async function loadTracksJson() {
     try {
@@ -227,20 +227,16 @@
       document.getElementById('result').textContent = 'No tracks found!';
       return;
     }
-
+    hasGuessed = false;
     currentTrack = track;
     document.getElementById('audio').src = `audio/${track.filename}`;
     document.getElementById('audio').load();
     document.getElementById('audio').play().catch(() => {
       document.getElementById('result').textContent = 'Oops, no good vibes this time. Try again!';
     });
-
     document.getElementById('result').textContent = '';
     document.getElementById('result').className = 'neutral';
     document.getElementById('yearGuess').value = '';
-    document.getElementById('message').style.display = 'none';
-    answerRevealed = false;
-
     if (timedMode) startTimer();
   }
 
@@ -254,11 +250,9 @@
     const bar = document.getElementById('timerBar');
     bar.style.display = 'block';
     bar.style.width = '100%';
-
     timer = setInterval(() => {
       timeLeft--;
       bar.style.width = `${(timeLeft / 20) * 100}%`;
-
       if (timeLeft <= 0) {
         clearInterval(timer);
         revealAnswer();
@@ -268,19 +262,16 @@
   }
 
   function filterByDecade(decadePrefix) {
-    filteredTracks = decadePrefix ? allTracks.filter(track => track.year.startsWith(decadePrefix)) : [...allTracks];
+    filteredTracks = decadePrefix
+      ? allTracks.filter(track => track.year.startsWith(decadePrefix))
+      : [...allTracks];
   }
 
   function revealAnswer() {
-    if (answerRevealed || !currentTrack) {
-      const msg = document.getElementById('message');
-      msg.textContent = 'Load a new song before guessing again.';
-      msg.style.display = 'block';
-      return;
-    }
-
+    if (hasGuessed || !currentTrack) return;
     clearInterval(timer);
     document.getElementById('timerBar').style.display = 'none';
+    hasGuessed = true;
 
     let guess = document.getElementById('yearGuess').value.trim();
     if (/^\d{2}$/.test(guess)) {
@@ -303,12 +294,14 @@
       streak++;
       correct = true;
       message = '🎉 Correct!';
-    } else if (guess.slice(0, 2) === correctYear.slice(0, 2)) {
-      streak = 0;
-      message = 'Wrong Century, Close!';
     } else {
       streak = 0;
-      message = 'Oops, try again!';
+      message = [
+        'Close but no dice!',
+        'Good try — not quite.',
+        'Keep on truckin\' — try again!',
+        'Swing and a miss!'
+      ][Math.floor(Math.random() * 4)];
     }
 
     if (correctAttempts > siteHighScore) {
@@ -321,12 +314,10 @@
     resultEl.textContent = `${message} You guessed: ${guess} — Correct Year: ${correctYear}\n\nSong: ${currentTrack.track}\nDate: ${showDate}${fullPlace ? `\n${fullPlace}` : ''}`;
 
     updateScore();
-    answerRevealed = true;
   }
 
   function updateScore() {
-    const scoreEl = document.getElementById('score');
-    scoreEl.textContent = `Score: ${correctAttempts}/${totalAttempts} | High Score: ${siteHighScore} | Streak: ${streak}`;
+    document.getElementById('score').textContent = `Score: ${correctAttempts}/${totalAttempts} | High Score: ${siteHighScore} | Streak: ${streak}`;
   }
 
   function copyShareLink() {
@@ -339,7 +330,7 @@
 
 <footer style="font-size: 0.8em; text-align: center; margin-top: 2em; color: #ccc;">
   <a href="https://github.com/Gignac77" target="_blank" rel="noopener noreferrer" style="color: #ccc; text-decoration: none;">
-    Built with Love by Matt - 7/1/25
+    Built with Love by Matt - 2025
   </a>
 </footer>
 </body>
