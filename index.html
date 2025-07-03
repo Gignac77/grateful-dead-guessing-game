@@ -23,7 +23,6 @@
       max-width: 600px;
       margin: auto;
       width: 90%;
-      position: relative;
     }
     audio {
       width: 100%;
@@ -47,28 +46,6 @@
       height: 100px;
       border-radius: 50%;
       font-size: 1.2em;
-      position: relative;
-    }
-    .generate::after {
-      content: "";
-      position: absolute;
-      top: -15px;
-      left: -15px;
-      width: 130px;
-      height: 130px;
-      border-radius: 50%;
-      background: rgba(40, 167, 69, 0.3);
-      animation: pulse 1.5s infinite;
-      z-index: -1;
-      display: none;
-    }
-    .playing .generate::after {
-      display: block;
-    }
-    @keyframes pulse {
-      0% { transform: scale(1); opacity: 0.6; }
-      50% { transform: scale(1.2); opacity: 0.3; }
-      100% { transform: scale(1); opacity: 0.6; }
     }
     .reveal {
       background-color: #0066cc;
@@ -77,6 +54,10 @@
       background-color: #9933cc;
       font-size: 1em;
       padding: 0.4em 1em;
+      transition: background-color 0.3s ease;
+    }
+    .timed.active {
+      background-color: #661199;
     }
     .donate {
       display: inline-block;
@@ -136,6 +117,10 @@
       margin-top: 1em;
       font-size: 1.2em;
       color: #fff;
+      border-top: 1px solid #444;
+      border-bottom: 1px solid #444;
+      padding: 0.5em 0;
+      background-color: rgba(255, 255, 255, 0.05);
     }
     #thankYou {
       margin-top: 0.5em;
@@ -177,7 +162,7 @@
     <audio id="audio" controls></audio>
     <br />
 
-    <button class="generate" id="generateBtn" onclick="loadRandomTrack()">Go</button>
+    <button class="generate" onclick="loadRandomTrack()">Go</button>
     <br />
 
     <input type="text" id="yearGuess" placeholder="Year" maxlength="4" autocomplete="off" />
@@ -185,7 +170,7 @@
 
     <button class="reveal" onclick="revealAnswer()">Reveal Answer</button>
     <br />
-    <button class="timed" onclick="toggleTimedMode()">Timed Mode</button>
+    <button id="timedButton" class="timed" onclick="toggleTimedMode()">Timed Mode</button>
 
     <div id="timerBar"></div>
 
@@ -217,7 +202,7 @@
   let timedMode = false;
   let timer = null;
   let timeLeft = 20;
-  let answerRevealed = false;
+  let answered = false;
 
   async function loadTracksJson() {
     try {
@@ -225,15 +210,6 @@
       allTracks = await res.json();
       filteredTracks = [...allTracks];
       document.getElementById('result').textContent = '';
-
-      const urlParams = new URLSearchParams(window.location.search);
-      const trackParam = urlParams.get('track');
-      if (trackParam) {
-        const track = allTracks.find(t => t.filename === trackParam);
-        if (track) {
-          loadSpecificTrack(track);
-        }
-      }
     } catch {
       document.getElementById('result').textContent = 'Could not load tracks. Please refresh!';
     }
@@ -247,24 +223,18 @@
   }
 
   function loadRandomTrack() {
-    answerRevealed = false;
     const track = getRandomTrack();
     if (!track) {
       document.getElementById('result').textContent = 'No tracks found!';
       return;
     }
-    loadSpecificTrack(track);
-  }
-
-  function loadSpecificTrack(track) {
+    answered = false;
     currentTrack = track;
     document.getElementById('audio').src = `audio/${track.filename}`;
     document.getElementById('audio').load();
     document.getElementById('audio').play().catch(() => {
       document.getElementById('result').textContent = 'Oops, no good vibes this time. Try again!';
     });
-
-    document.querySelector('.card').classList.add('playing');
     document.getElementById('result').textContent = '';
     document.getElementById('result').className = 'neutral';
     document.getElementById('yearGuess').value = '';
@@ -273,6 +243,9 @@
 
   function toggleTimedMode() {
     timedMode = !timedMode;
+    const btn = document.getElementById('timedButton');
+    btn.classList.toggle('active', timedMode);
+    btn.textContent = timedMode ? 'Timed Mode On' : 'Timed Mode';
   }
 
   function startTimer() {
@@ -281,11 +254,9 @@
     const bar = document.getElementById('timerBar');
     bar.style.display = 'block';
     bar.style.width = '100%';
-
     timer = setInterval(() => {
       timeLeft--;
       bar.style.width = `${(timeLeft / 20) * 100}%`;
-
       if (timeLeft <= 0) {
         clearInterval(timer);
         revealAnswer();
@@ -303,12 +274,14 @@
   }
 
   function revealAnswer() {
-    if (answerRevealed || !currentTrack) return;
-    answerRevealed = true;
+    if (answered) return;
+    answered = true;
     clearInterval(timer);
     document.getElementById('timerBar').style.display = 'none';
 
+    if (!currentTrack) return;
     let guess = document.getElementById('yearGuess').value.trim();
+
     if (/^\d{2}$/.test(guess)) {
       const twoDigit = parseInt(guess, 10);
       guess = (twoDigit >= 30 ? '19' : '20') + guess;
@@ -328,10 +301,11 @@
       correctAttempts++;
       streak++;
       correct = true;
-      message = '🎉 Correct!';
+      message = '🎉 Right on the money!';
     } else {
       streak = 0;
-      message = ['Almost there!', 'Nice try!', 'Off by a tour!', 'Try another era!'][Math.floor(Math.random() * 4)];
+      const phrases = ['Close, but no sunshine daydream.', 'Keep truckin’!', 'Try again next jam!', 'Off by a mile... or a decade.'];
+      message = phrases[Math.floor(Math.random() * phrases.length)];
     }
 
     if (correctAttempts > siteHighScore) {
@@ -341,7 +315,7 @@
 
     const resultEl = document.getElementById('result');
     resultEl.className = correct ? 'correct' : 'incorrect';
-    resultEl.textContent = `${message} You guessed: ${guess} — Correct Year: ${correctYear}\n\nSong: ${currentTrack.track}\nDate: ${showDate}${fullPlace ? `\n${fullPlace}` : ''}\n\nGenerate a new song to continue.`;
+    resultEl.textContent = `${message}\nYou guessed: ${guess} — Correct Year: ${correctYear}\n\nSong: ${currentTrack.track}\nDate: ${showDate}${fullPlace ? `\n${fullPlace}` : ''}`;
 
     updateScore();
   }
@@ -352,7 +326,7 @@
   }
 
   function copyShareLink() {
-    const link = currentTrack ? `${window.location.origin}${window.location.pathname}?track=${currentTrack.filename}` : window.location.href;
+    const link = window.location.href;
     navigator.clipboard.writeText(link).then(() => {
       alert('Link copied to clipboard!');
     });
