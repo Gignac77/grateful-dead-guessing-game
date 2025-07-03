@@ -55,6 +55,9 @@
       font-size: 1em;
       padding: 0.4em 1em;
     }
+    .timed.active {
+      background-color: #cc33cc;
+    }
     .donate {
       display: inline-block;
       margin-top: 2em;
@@ -67,7 +70,7 @@
       border-radius: 0.5em;
       font-family: 'Comic Neue', cursive;
     }
-    .share {
+    .share, .song-share {
       display: inline-block;
       margin-top: 1em;
       background-color: #4444aa;
@@ -113,10 +116,12 @@
       margin-top: 1em;
       font-size: 1.2em;
       color: #fff;
-      background-color: rgba(255,255,255,0.1);
-      border: 1px solid #eee;
-      padding: 1em;
-      border-radius: 1em;
+      border-top: 1px solid #666;
+      padding-top: 0.5em;
+    }
+    #extraStats {
+      font-size: 0.9em;
+      color: #ccc;
     }
     #thankYou {
       margin-top: 0.5em;
@@ -154,19 +159,14 @@
     </div>
     <p style="font-style: italic; margin-top: 0.5em; font-size: 0.9em;">1965–1995</p>
 
-    <br />
     <audio id="audio" controls></audio>
-    <br />
 
     <button class="generate" onclick="loadRandomTrack()">Go</button>
-    <br />
 
     <input type="text" id="yearGuess" placeholder="Year" maxlength="4" autocomplete="off" />
-    <br />
 
     <button class="reveal" onclick="revealAnswer()">Reveal Answer</button>
-    <br />
-    <button class="timed" onclick="toggleTimedMode(this)">Timed Mode</button>
+    <button class="timed" id="timedBtn" onclick="toggleTimedMode()">Timed Mode: Off</button>
 
     <div id="timerBar"></div>
 
@@ -179,38 +179,78 @@
     </select>
 
     <p id="result" class="neutral"></p>
-    <p id="score">Score: 0/0 | High Score: 0 | Streak: 0</p>
+    <p id="score">Score: 0/0 | Streak: 0</p>
+    <p id="extraStats"></p>
 
     <a href="https://www.gofundme.com/f/our-friend-betty-cantorjackson-could-use-our-help" target="_blank" class="donate">🌸 Donate to Betty</a>
     <br />
     <a class="share" href="#" onclick="copyShareLink()">🔗 Share This With a Friend</a>
+    <div id="songShare"></div>
     <p id="thankYou">Thank a Taper</p>
   </div>
 
 <script>
 let currentTrack = null;
-let totalAttempts = 0;
-let correctAttempts = 0;
-let streak = 0;
-let siteHighScore = parseInt(localStorage.getItem('gd_site_highscore')) || 0;
-let allTracks = [];
-let filteredTracks = [];
-let timedMode = false;
-let timer = null;
-let timeLeft = 20;
-let answerRevealed = false;
+let allTracks = [], filteredTracks = [];
+let totalAttempts = 0, correctAttempts = 0, streak = 0;
+let timedMode = false, timer = null, timeLeft = 20;
+let lastTrackId = null;
 
-async function loadTracksJson() {
-  try {
-    const res = await fetch('tracks.json');
-    allTracks = await res.json();
-    filteredTracks = [...allTracks];
-    document.getElementById('result').textContent = '';
-  } catch {
-    document.getElementById('result').textContent = 'Could not load tracks. Please refresh!';
+const stats = JSON.parse(localStorage.getItem('gd_stats') || '{}');
+const globalHighScore = { name: localStorage.getItem('gd_highscore_name') || 'Deadhead', score: parseInt(localStorage.getItem('gd_highscore') || '0') };
+
+function updateScoreDisplay() {
+  const mode = document.getElementById('decadeSelect').value || 'all';
+  const key = `score_${mode}`;
+  const correct = stats[key]?.correct || 0;
+  const total = stats[key]?.total || 0;
+  const userStreak = stats[key]?.streak || 0;
+  document.getElementById('score').textContent = `Score: ${correct}/${total} | Streak: ${userStreak}`;
+  document.getElementById('extraStats').textContent = `All-Time Record: ${globalHighScore.name} (${globalHighScore.score})`;
+}
+
+function saveStat(track, correct) {
+  const id = track.filename;
+  if (!stats[id]) stats[id] = { correct: 0, total: 0 };
+  stats[id].total++;
+  if (correct) stats[id].correct++;
+
+  const mode = document.getElementById('decadeSelect').value || 'all';
+  const key = `score_${mode}`;
+  stats[key] = stats[key] || { correct: 0, total: 0, streak: 0 };
+  stats[key].total++;
+  if (correct) {
+    stats[key].correct++;
+    stats[key].streak = (stats[key].streak || 0) + 1;
+  } else {
+    stats[key].streak = 0;
+  }
+
+  localStorage.setItem('gd_stats', JSON.stringify(stats));
+
+  if (stats[key].total >= 20 && stats[key].correct > globalHighScore.score) {
+    const name = prompt("New All-Time Record! Enter name:")?.slice(0, 20) || 'Deadhead';
+    localStorage.setItem('gd_highscore', stats[key].correct);
+    localStorage.setItem('gd_highscore_name', name);
   }
 }
-loadTracksJson();
+
+async function loadTracksJson() {
+  const res = await fetch('tracks.json');
+  allTracks = await res.json();
+  filteredTracks = [...allTracks];
+  const songParam = new URLSearchParams(window.location.search).get('song');
+  if (songParam) {
+    const specific = allTracks.find(t => t.filename === songParam);
+    if (specific) playTrack(specific);
+  }
+  updateScoreDisplay();
+}
+
+function filterByDecade(decadePrefix) {
+  filteredTracks = decadePrefix ? allTracks.filter(t => t.year.startsWith(decadePrefix)) : [...allTracks];
+  updateScoreDisplay();
+}
 
 function getRandomTrack() {
   if (filteredTracks.length === 0) return null;
@@ -220,29 +260,55 @@ function getRandomTrack() {
 
 function loadRandomTrack() {
   const track = getRandomTrack();
-  if (!track) {
-    document.getElementById('result').textContent = 'No tracks found!';
-    return;
-  }
+  if (!track) return;
+  playTrack(track);
+}
 
+function playTrack(track) {
   currentTrack = track;
-  answerRevealed = false;
+  lastTrackId = track.filename;
   document.getElementById('audio').src = `audio/${track.filename}`;
   document.getElementById('audio').load();
-  document.getElementById('audio').play().catch(() => {
-    document.getElementById('result').textContent = 'Oops, no good vibes this time. Try again!';
-  });
-
   document.getElementById('result').textContent = '';
   document.getElementById('result').className = 'neutral';
   document.getElementById('yearGuess').value = '';
-
+  document.getElementById('songShare').innerHTML = '';
   if (timedMode) startTimer();
 }
 
-function toggleTimedMode(btn) {
+function revealAnswer() {
+  clearInterval(timer);
+  document.getElementById('timerBar').style.display = 'none';
+
+  if (!currentTrack) return;
+
+  const input = document.getElementById('yearGuess');
+  let guess = input.value.trim();
+  input.disabled = true;
+
+  const correctYear = currentTrack.year;
+  const correct = guess === correctYear;
+  saveStat(currentTrack, correct);
+
+  const message = correct ? 'Correct!' : 'Not Quite!';
+  const rate = stats[currentTrack.filename];
+  const rateMsg = rate?.total >= 5 ? `\nThis song has a ${(rate.correct / rate.total * 100).toFixed(1)}% guess rate.` : '';
+
+  const result = `${message}\nYou guessed: ${guess} — Correct Year: ${correctYear}\n\n${currentTrack.track}\n${currentTrack.date}${currentTrack.venue ? ", " + currentTrack.venue : ''}${currentTrack.location ? ", " + currentTrack.location : ''}${rateMsg}`;
+
+  document.getElementById('result').textContent = result;
+  document.getElementById('result').className = correct ? 'correct' : 'incorrect';
+
+  updateScoreDisplay();
+
+  document.getElementById('songShare').innerHTML = `<a class="song-share" href='?song=${currentTrack.filename}' title="Copy link" onclick='navigator.clipboard.writeText(window.location.origin + "/?song=${currentTrack.filename}"); return false;'>🎶 Challenge a Friend</a>`;
+}
+
+function toggleTimedMode() {
   timedMode = !timedMode;
-  btn.style.opacity = timedMode ? '1' : '0.6';
+  const btn = document.getElementById('timedBtn');
+  btn.classList.toggle('active', timedMode);
+  btn.textContent = timedMode ? 'Timed Mode: On' : 'Timed Mode: Off';
 }
 
 function startTimer() {
@@ -255,7 +321,6 @@ function startTimer() {
   timer = setInterval(() => {
     timeLeft--;
     bar.style.width = `${(timeLeft / 20) * 100}%`;
-
     if (timeLeft <= 0) {
       clearInterval(timer);
       revealAnswer();
@@ -264,63 +329,13 @@ function startTimer() {
   }, 1000);
 }
 
-function filterByDecade(decadePrefix) {
-  filteredTracks = !decadePrefix ? [...allTracks] : allTracks.filter(t => t.year.startsWith(decadePrefix));
-}
-
-function revealAnswer() {
-  if (!currentTrack || answerRevealed) return;
-  answerRevealed = true;
-  clearInterval(timer);
-  document.getElementById('timerBar').style.display = 'none';
-
-  let guess = document.getElementById('yearGuess').value.trim();
-  if (/^\d{2}$/.test(guess)) guess = (parseInt(guess, 10) >= 30 ? '19' : '20') + guess;
-
-  const correctYear = currentTrack.year || 'Unknown';
-  const showDate = currentTrack.date || 'Unknown';
-  const venue = currentTrack.venue || '';
-  const location = currentTrack.location || '';
-  const fullPlace = venue && location ? `${venue}, ${location}` : venue || location || '';
-
-  totalAttempts++;
-  let correct = false;
-  let message = '';
-
-  if (guess === correctYear) {
-    correctAttempts++;
-    streak++;
-    correct = true;
-    message = 'Correct!';
-  } else {
-    streak = 0;
-    message = 'Not Quite!';
-  }
-
-  if (correctAttempts > siteHighScore) {
-    siteHighScore = correctAttempts;
-    localStorage.setItem('gd_site_highscore', siteHighScore);
-  }
-
-  const resultEl = document.getElementById('result');
-  resultEl.className = correct ? 'correct' : 'incorrect';
-  resultEl.textContent = `${message}\nYou guessed: ${guess} — Correct Year: ${correctYear}\n\nSong: ${currentTrack.track}\nDate: ${showDate}${fullPlace ? `\n${fullPlace}` : ''}`;
-  updateScore();
-}
-
-function updateScore() {
-  const scoreEl = document.getElementById('score');
-  scoreEl.textContent = `Score: ${correctAttempts}/${totalAttempts} | High Score: ${siteHighScore} | Streak: ${streak}`;
-}
-
 function copyShareLink() {
-  const link = window.location.href;
-  navigator.clipboard.writeText(link).then(() => {
-    alert('Link copied to clipboard!');
-  });
+  navigator.clipboard.writeText(window.location.href);
+  alert('Link copied to clipboard!');
 }
-</script>
 
+loadTracksJson();
+</script>
 <footer style="font-size: 0.8em; text-align: center; margin-top: 2em; color: #ccc;">
   <a href="https://github.com/Gignac77" target="_blank" rel="noopener noreferrer" style="color: #ccc; text-decoration: none;">
     Built with Love by Matt - 7/2/25
