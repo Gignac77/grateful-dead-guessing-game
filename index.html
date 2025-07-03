@@ -2,24 +2,25 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Guess the Dead Year</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://fonts.googleapis.com/css2?family=Comic+Neue&display=swap" rel="stylesheet">
   <style>
     body {
       font-family: 'Comic Neue', cursive;
       text-align: center;
       padding: 2em;
-      background: url('https://cdn.mos.cms.futurecdn.net/HuGGeENt6kGyixe3hT9tnY.jpg') no-repeat center center fixed;
-      background-size: cover;
+      background: url('https://cdn.mos.cms.futurecdn.net/HuGGeENt6kGyixe3hT9tnY.jpg');
+      background-color: #111;
       color: #eee;
     }
     .card {
-      background: rgba(0, 0, 0, 0.85);
+      background: rgba(0, 0, 0, 0.8);
       padding: 2em;
       border-radius: 1em;
       box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
-      max-width: 600px;
+      max-width: 95%;
+      width: 600px;
       margin: auto;
     }
     audio {
@@ -29,7 +30,7 @@
     }
     button {
       padding: 0.6em 1.2em;
-      font-size: 1.1em;
+      font-size: 1.2em;
       color: white;
       border: none;
       border-radius: 0.5em;
@@ -46,7 +47,7 @@
       font-size: 1.2em;
     }
     .reveal {
-      background-color: #1e90ff;
+      background-color: #9b59b6;
     }
     .timed {
       background-color: #9933cc;
@@ -67,14 +68,12 @@
     }
     .share {
       display: inline-block;
+      background-color: #555;
+      color: white;
       margin-top: 1em;
-      background-color: #ffcc00;
-      color: black;
-      text-decoration: none;
       font-size: 0.9em;
-      padding: 0.5em 1em;
+      padding: 0.4em 1.2em;
       border-radius: 0.5em;
-      font-weight: bold;
       font-family: 'Comic Neue', cursive;
     }
     input {
@@ -160,9 +159,7 @@
 
     <button class="reveal" onclick="revealAnswer()">Reveal Answer</button>
     <br />
-
     <button class="timed" onclick="toggleTimedMode()">Timed Mode</button>
-
     <div id="timerBar"></div>
 
     <select id="decadeSelect" onchange="filterByDecade(this.value)">
@@ -177,9 +174,10 @@
     <p id="score">Score: 0/0 | High Score: 0 | Streak: 0</p>
 
     <a href="https://www.gofundme.com/f/our-friend-betty-cantorjackson-could-use-our-help" target="_blank" class="donate">🌸 Donate to Betty</a>
-    <br />
-    <a href="#" onclick="shareSite()" class="share">Share with a Friend</a>
+    <br>
+    <button class="share" onclick="shareGame()">Share with a Friend</button>
     <p id="thankYou">Thank a Taper</p>
+    <button class="share" onclick="todayInDeadHistory()">Today in Dead History</button>
   </div>
 
 <script>
@@ -193,6 +191,16 @@
   let timedMode = false;
   let timer = null;
   let timeLeft = 20;
+
+  const incorrectPhrases = [
+    "Not quite, man.",
+    "Close, but no sunshine.",
+    "Wrong turn at Albuquerque.",
+    "You spaced it.",
+    "The bus came by... and you missed it.",
+    "Swing and a 'Ripple.'",
+    "No dice this time."
+  ];
 
   async function loadTracksJson() {
     try {
@@ -218,11 +226,11 @@
       document.getElementById('result').textContent = 'No tracks found!';
       return;
     }
+
     currentTrack = track;
-    const audioEl = document.getElementById('audio');
-    audioEl.src = `audio/${track.filename}`;
-    audioEl.load();
-    audioEl.play().catch(() => {
+    document.getElementById('audio').src = `audio/${track.filename}`;
+    document.getElementById('audio').load();
+    document.getElementById('audio').play().catch(() => {
       document.getElementById('result').textContent = 'Oops, no good vibes this time. Try again!';
     });
 
@@ -243,9 +251,11 @@
     const bar = document.getElementById('timerBar');
     bar.style.display = 'block';
     bar.style.width = '100%';
+
     timer = setInterval(() => {
       timeLeft--;
       bar.style.width = `${(timeLeft / 20) * 100}%`;
+
       if (timeLeft <= 0) {
         clearInterval(timer);
         revealAnswer();
@@ -254,23 +264,31 @@
     }, 1000);
   }
 
-  function filterByDecade(prefix) {
-    filteredTracks = prefix ? allTracks.filter(t => t.year.startsWith(prefix)) : [...allTracks];
+  function filterByDecade(decadePrefix) {
+    if (!decadePrefix) {
+      filteredTracks = [...allTracks];
+    } else {
+      filteredTracks = allTracks.filter(track => track.year.startsWith(decadePrefix));
+    }
   }
 
   function revealAnswer() {
     clearInterval(timer);
     document.getElementById('timerBar').style.display = 'none';
-    if (!currentTrack) return;
 
+    if (!currentTrack) return;
     let guess = document.getElementById('yearGuess').value.trim();
-    if (/^\d{2}$/.test(guess)) guess = (parseInt(guess) >= 30 ? '19' : '20') + guess;
+
+    if (/^\d{2}$/.test(guess)) {
+      const twoDigit = parseInt(guess, 10);
+      guess = (twoDigit >= 30 ? '19' : '20') + guess;
+    }
 
     const correctYear = currentTrack.year || 'Unknown';
     const showDate = currentTrack.date || 'Unknown';
     const venue = currentTrack.venue || '';
     const location = currentTrack.location || '';
-    const place = venue && location ? `${venue}, ${location}` : venue || location || '';
+    const fullPlace = venue && location ? `${venue}, ${location}` : venue || location || '';
 
     totalAttempts++;
     let correct = false;
@@ -281,13 +299,12 @@
       streak++;
       correct = true;
       message = '🎉 Correct!';
-    } else if (guess.slice(0, 2) === correctYear.slice(0, 2)) {
+    } else if (guess.slice(0,2) === correctYear.slice(0,2)) {
       streak = 0;
-      message = "Wrong Year, Right Century!";
+      message = 'Wrong Year, Right Century!';
     } else {
       streak = 0;
-      const phrases = ['Nope!', 'Try again!', 'Keep truckin'!', 'So close!', 'Not quite!'];
-      message = phrases[Math.floor(Math.random() * phrases.length)];
+      message = incorrectPhrases[Math.floor(Math.random() * incorrectPhrases.length)];
     }
 
     if (correctAttempts > siteHighScore) {
@@ -297,18 +314,25 @@
 
     const resultEl = document.getElementById('result');
     resultEl.className = correct ? 'correct' : 'incorrect';
-    resultEl.textContent = `${message} You guessed: ${guess} — Correct Year: ${correctYear}\n\nSong: ${currentTrack.track}\nDate: ${showDate}${place ? `\n${place}` : ''}`;
+    resultEl.textContent = `${message} You guessed: ${guess} — Correct Year: ${correctYear}\n\nSong: ${currentTrack.track}\nDate: ${showDate}${fullPlace ? `\n${fullPlace}` : ''}`;
 
     updateScore();
   }
 
   function updateScore() {
-    document.getElementById('score').textContent = `Score: ${correctAttempts}/${totalAttempts} | High Score: ${siteHighScore} | Streak: ${streak}`;
+    const scoreEl = document.getElementById('score');
+    scoreEl.textContent = `Score: ${correctAttempts}/${totalAttempts} | High Score: ${siteHighScore} | Streak: ${streak}`;
   }
 
-  function shareSite() {
+  function shareGame() {
     const url = window.location.href;
-    navigator.clipboard.writeText(url).then(() => alert("Link copied to clipboard!"));
+    navigator.clipboard.writeText(url).then(() => alert('URL copied!')).catch(() => alert('Could not copy URL'));
+  }
+
+  function todayInDeadHistory() {
+    const today = new Date();
+    const mmdd = `${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
+    window.open(`https://deadbase.com/search/date/${mmdd}`, '_blank');
   }
 </script>
 
