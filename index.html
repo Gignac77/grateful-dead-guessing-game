@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Guess the Dead Year</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://fonts.googleapis.com/css2?family=Comic+Neue&display=swap" rel="stylesheet">
   <style>
     body {
@@ -13,16 +13,15 @@
       background: url('https://cdn.mos.cms.futurecdn.net/HuGGeENt6kGyixe3hT9tnY.jpg');
       background-color: #111;
       color: #eee;
-      margin: 0;
     }
     .card {
       background: rgba(0, 0, 0, 0.8);
       padding: 2em;
       border-radius: 1em;
       box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
-      max-width: 600px;
+      max-width: 95%;
+      width: 600px;
       margin: auto;
-      width: 90%;
     }
     audio {
       width: 100%;
@@ -48,7 +47,7 @@
       font-size: 1.2em;
     }
     .reveal {
-      background-color: #0066cc;
+      background-color: #9b59b6;
     }
     .timed {
       background-color: #9933cc;
@@ -69,13 +68,11 @@
     }
     .share {
       display: inline-block;
-      margin-top: 1em;
-      background-color: #4444aa;
+      background-color: #555;
       color: white;
-      text-decoration: none;
-      font-weight: bold;
+      margin-top: 1em;
       font-size: 0.9em;
-      padding: 0.4em 1em;
+      padding: 0.4em 1.2em;
       border-radius: 0.5em;
       font-family: 'Comic Neue', cursive;
     }
@@ -163,7 +160,6 @@
     <button class="reveal" onclick="revealAnswer()">Reveal Answer</button>
     <br />
     <button class="timed" onclick="toggleTimedMode()">Timed Mode</button>
-
     <div id="timerBar"></div>
 
     <select id="decadeSelect" onchange="filterByDecade(this.value)">
@@ -178,9 +174,10 @@
     <p id="score">Score: 0/0 | High Score: 0 | Streak: 0</p>
 
     <a href="https://www.gofundme.com/f/our-friend-betty-cantorjackson-could-use-our-help" target="_blank" class="donate">🌸 Donate to Betty</a>
-    <br />
-    <a class="share" href="#" onclick="copyShareLink()">🔗 Share This With a Friend</a>
+    <br>
+    <button class="share" onclick="shareGame()">Share with a Friend</button>
     <p id="thankYou">Thank a Taper</p>
+    <button class="share" onclick="todayInDeadHistory()">Today in Dead History</button>
   </div>
 
 <script>
@@ -194,6 +191,16 @@
   let timedMode = false;
   let timer = null;
   let timeLeft = 20;
+
+  const incorrectPhrases = [
+    "Not quite, man.",
+    "Close, but no sunshine.",
+    "Wrong turn at Albuquerque.",
+    "You spaced it.",
+    "The bus came by... and you missed it.",
+    "Swing and a 'Ripple.'",
+    "No dice this time."
+  ];
 
   async function loadTracksJson() {
     try {
@@ -297,7 +304,7 @@
       message = 'Wrong Year, Right Century!';
     } else {
       streak = 0;
-      message = 'Not Quite!';
+      message = incorrectPhrases[Math.floor(Math.random() * incorrectPhrases.length)];
     }
 
     if (correctAttempts > siteHighScore) {
@@ -317,11 +324,15 @@
     scoreEl.textContent = `Score: ${correctAttempts}/${totalAttempts} | High Score: ${siteHighScore} | Streak: ${streak}`;
   }
 
-  function copyShareLink() {
-    const link = window.location.href;
-    navigator.clipboard.writeText(link).then(() => {
-      alert('Link copied to clipboard!');
-    });
+  function shareGame() {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => alert('URL copied!')).catch(() => alert('Could not copy URL'));
+  }
+
+  function todayInDeadHistory() {
+    const today = new Date();
+    const mmdd = `${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
+    window.open(`https://deadbase.com/search/date/${mmdd}`, '_blank');
   }
 </script>
 
