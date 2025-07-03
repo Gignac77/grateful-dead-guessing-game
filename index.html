@@ -24,7 +24,7 @@
     audio {
       width: 100%;
       margin: 1em 0;
-      border: none; /* ✅ Remove green border */
+      border: none;
     }
     button, input[type="text"] {
       font-family: 'Comic Neue', cursive;
@@ -44,6 +44,15 @@
     .generate {
       background-color: #cc0000;
       color: white;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      font-size: 0.9em;
+      padding: 0.5em;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1.2em;
     }
     .reveal {
       background-color: #0066cc;
@@ -52,7 +61,7 @@
     .toggle-timer {
       background-color: #228B22;
       color: white;
-      font-size: 0.9em;
+      font-size: 0.95em;
       padding: 0.6em 1.2em;
       margin: 0.5em auto 1em auto;
       max-width: 180px;
@@ -108,13 +117,28 @@
     #score {
       margin-top: 1em;
       font-size: 1.2em;
-      color: white; /* ✅ Brighten score text */
+      color: white;
     }
     #thankYou {
       margin-top: 0.5em;
       color: white;
       font-style: italic;
       margin-bottom: 1em;
+    }
+    #timerBarContainer {
+      width: 100%;
+      background-color: #444;
+      border-radius: 5px;
+      height: 10px;
+      margin-top: 10px;
+      display: none;
+    }
+    #timerBar {
+      height: 100%;
+      width: 100%;
+      background-color: #00ff88;
+      border-radius: 5px;
+      transition: width 1s linear;
     }
     @keyframes glow {
       0% { text-shadow: 0 0 5px #00ff88; }
@@ -135,11 +159,14 @@
     <audio id="audio" controls></audio>
     <br />
 
-    <button class="generate" onclick="loadRandomTrack()">Random Tune Generator</button>
+    <button class="generate" onclick="loadRandomTrack()">🔁<br>Random<br>Song</button>
     <button class="toggle-timer" onclick="toggleTimer()">⏱️ Timed Mode (Off)</button>
 
+    <div id="timerBarContainer">
+      <div id="timerBar"></div>
+    </div>
+
     <input type="text" id="yearGuess" placeholder="Year" maxlength="4" autocomplete="off" />
-    <br />
 
     <button class="reveal" onclick="revealAnswer()">Reveal Answer</button>
     <p id="result" class="neutral"></p>
@@ -260,27 +287,31 @@
 
     function startTimer() {
       stopTimer();
+      const bar = document.getElementById('timerBar');
+      const barContainer = document.getElementById('timerBarContainer');
+      bar.style.width = '100%';
+      barContainer.style.display = 'block';
+
       let secondsLeft = timerSeconds;
       const interval = 1000;
-      const input = document.getElementById('yearGuess');
-      const result = document.getElementById('result');
 
       timer = setInterval(() => {
         secondsLeft--;
-        input.placeholder = `⏳ ${secondsLeft}s`;
+        const percent = (secondsLeft / timerSeconds) * 100;
+        bar.style.width = percent + '%';
+        bar.style.backgroundColor = percent > 50 ? '#00ff88' : percent > 20 ? '#ffaa00' : '#ff4444';
+
         if (secondsLeft <= 0) {
           clearInterval(timer);
-          input.placeholder = "Time's up!";
-          result.textContent = '⏰ Time expired!';
-          result.className = 'neutral';
           revealAnswer();
+          barContainer.style.display = 'none';
         }
       }, interval);
     }
 
     function stopTimer() {
       clearInterval(timer);
-      document.getElementById('yearGuess').placeholder = 'Year';
+      document.getElementById('timerBarContainer').style.display = 'none';
     }
 
     function shareGame() {
