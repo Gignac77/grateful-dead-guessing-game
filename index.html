@@ -139,6 +139,12 @@
       font-size: 1em;
       font-family: 'Comic Neue', cursive;
     }
+    #message {
+      color: #ffcc00;
+      font-size: 0.9em;
+      margin-top: 0.5em;
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -176,6 +182,7 @@
 
     <p id="result" class="neutral"></p>
     <p id="score">Score: 0/0 | High Score: 0 | Streak: 0</p>
+    <p id="message"></p>
 
     <a href="https://www.gofundme.com/f/our-friend-betty-cantorjackson-could-use-our-help" target="_blank" class="donate">🌸 Donate to Betty</a>
     <br />
@@ -194,6 +201,7 @@
   let timedMode = false;
   let timer = null;
   let timeLeft = 20;
+  let answerRevealed = false;
 
   async function loadTracksJson() {
     try {
@@ -230,6 +238,8 @@
     document.getElementById('result').textContent = '';
     document.getElementById('result').className = 'neutral';
     document.getElementById('yearGuess').value = '';
+    document.getElementById('message').style.display = 'none';
+    answerRevealed = false;
 
     if (timedMode) startTimer();
   }
@@ -258,20 +268,21 @@
   }
 
   function filterByDecade(decadePrefix) {
-    if (!decadePrefix) {
-      filteredTracks = [...allTracks];
-    } else {
-      filteredTracks = allTracks.filter(track => track.year.startsWith(decadePrefix));
-    }
+    filteredTracks = decadePrefix ? allTracks.filter(track => track.year.startsWith(decadePrefix)) : [...allTracks];
   }
 
   function revealAnswer() {
+    if (answerRevealed || !currentTrack) {
+      const msg = document.getElementById('message');
+      msg.textContent = 'Load a new song before guessing again.';
+      msg.style.display = 'block';
+      return;
+    }
+
     clearInterval(timer);
     document.getElementById('timerBar').style.display = 'none';
 
-    if (!currentTrack) return;
     let guess = document.getElementById('yearGuess').value.trim();
-
     if (/^\d{2}$/.test(guess)) {
       const twoDigit = parseInt(guess, 10);
       guess = (twoDigit >= 30 ? '19' : '20') + guess;
@@ -292,12 +303,12 @@
       streak++;
       correct = true;
       message = '🎉 Correct!';
-    } else if (guess.slice(0,2) === correctYear.slice(0,2)) {
+    } else if (guess.slice(0, 2) === correctYear.slice(0, 2)) {
       streak = 0;
-      message = 'Wrong Year, Right Century!';
+      message = 'Wrong Century, Close!';
     } else {
       streak = 0;
-      message = 'Not Quite!';
+      message = 'Oops, try again!';
     }
 
     if (correctAttempts > siteHighScore) {
@@ -310,6 +321,7 @@
     resultEl.textContent = `${message} You guessed: ${guess} — Correct Year: ${correctYear}\n\nSong: ${currentTrack.track}\nDate: ${showDate}${fullPlace ? `\n${fullPlace}` : ''}`;
 
     updateScore();
+    answerRevealed = true;
   }
 
   function updateScore() {
