@@ -2,20 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Guess the Dead Year</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guess the Dead Year</title>
   <link href="https://fonts.googleapis.com/css2?family=Comic+Neue&display=swap" rel="stylesheet">
   <style>
     body {
       font-family: 'Comic Neue', cursive;
       text-align: center;
       padding: 2em;
-      background: url('https://cdn.mos.cms.futurecdn.net/HuGGeENt6kGyixe3hT9tnY.jpg');
-      background-color: #111;
+      background: url('https://cdn.mos.cms.futurecdn.net/HuGGeENt6kGyixe3hT9tnY.jpg') no-repeat center center fixed;
+      background-size: cover;
       color: #eee;
     }
     .card {
-      background: rgba(0, 0, 0, 0.8);
+      background: rgba(0, 0, 0, 0.85);
       padding: 2em;
       border-radius: 1em;
       box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
@@ -29,7 +29,7 @@
     }
     button {
       padding: 0.6em 1.2em;
-      font-size: 1.2em;
+      font-size: 1.1em;
       color: white;
       border: none;
       border-radius: 0.5em;
@@ -46,7 +46,7 @@
       font-size: 1.2em;
     }
     .reveal {
-      background-color: #0057e7; /* Saturated blue */
+      background-color: #1e90ff;
     }
     .timed {
       background-color: #9933cc;
@@ -63,6 +63,18 @@
       font-size: 1em;
       padding: 0.5em 1.5em;
       border-radius: 0.5em;
+      font-family: 'Comic Neue', cursive;
+    }
+    .share {
+      display: inline-block;
+      margin-top: 1em;
+      background-color: #ffcc00;
+      color: black;
+      text-decoration: none;
+      font-size: 0.9em;
+      padding: 0.5em 1em;
+      border-radius: 0.5em;
+      font-weight: bold;
       font-family: 'Comic Neue', cursive;
     }
     input {
@@ -114,14 +126,6 @@
       border-radius: 1em;
       display: none;
     }
-    #log {
-      font-size: 0.9em;
-      color: #ccc;
-      margin-top: 1em;
-      max-height: 200px;
-      overflow-y: auto;
-      text-align: left;
-    }
     @keyframes glow {
       0% { text-shadow: 0 0 5px #00ff88; }
       50% { text-shadow: 0 0 20px #00ff88; }
@@ -156,6 +160,7 @@
 
     <button class="reveal" onclick="revealAnswer()">Reveal Answer</button>
     <br />
+
     <button class="timed" onclick="toggleTimedMode()">Timed Mode</button>
 
     <div id="timerBar"></div>
@@ -171,9 +176,9 @@
     <p id="result" class="neutral"></p>
     <p id="score">Score: 0/0 | High Score: 0 | Streak: 0</p>
 
-    <div id="log"></div>
-
     <a href="https://www.gofundme.com/f/our-friend-betty-cantorjackson-could-use-our-help" target="_blank" class="donate">🌸 Donate to Betty</a>
+    <br />
+    <a href="#" onclick="shareSite()" class="share">Share with a Friend</a>
     <p id="thankYou">Thank a Taper</p>
   </div>
 
@@ -188,7 +193,6 @@
   let timedMode = false;
   let timer = null;
   let timeLeft = 20;
-  let badges = new Set();
 
   async function loadTracksJson() {
     try {
@@ -214,11 +218,11 @@
       document.getElementById('result').textContent = 'No tracks found!';
       return;
     }
-
     currentTrack = track;
-    document.getElementById('audio').src = `audio/${track.filename}`;
-    document.getElementById('audio').load();
-    document.getElementById('audio').play().catch(() => {
+    const audioEl = document.getElementById('audio');
+    audioEl.src = `audio/${track.filename}`;
+    audioEl.load();
+    audioEl.play().catch(() => {
       document.getElementById('result').textContent = 'Oops, no good vibes this time. Try again!';
     });
 
@@ -239,11 +243,9 @@
     const bar = document.getElementById('timerBar');
     bar.style.display = 'block';
     bar.style.width = '100%';
-
     timer = setInterval(() => {
       timeLeft--;
       bar.style.width = `${(timeLeft / 20) * 100}%`;
-
       if (timeLeft <= 0) {
         clearInterval(timer);
         revealAnswer();
@@ -252,31 +254,23 @@
     }, 1000);
   }
 
-  function filterByDecade(decadePrefix) {
-    if (!decadePrefix) {
-      filteredTracks = [...allTracks];
-    } else {
-      filteredTracks = allTracks.filter(track => track.year.startsWith(decadePrefix));
-    }
+  function filterByDecade(prefix) {
+    filteredTracks = prefix ? allTracks.filter(t => t.year.startsWith(prefix)) : [...allTracks];
   }
 
   function revealAnswer() {
     clearInterval(timer);
     document.getElementById('timerBar').style.display = 'none';
-
     if (!currentTrack) return;
-    let guess = document.getElementById('yearGuess').value.trim();
 
-    if (/^\d{2}$/.test(guess)) {
-      const twoDigit = parseInt(guess, 10);
-      guess = (twoDigit >= 30 ? '19' : '20') + twoDigit;
-    }
+    let guess = document.getElementById('yearGuess').value.trim();
+    if (/^\d{2}$/.test(guess)) guess = (parseInt(guess) >= 30 ? '19' : '20') + guess;
 
     const correctYear = currentTrack.year || 'Unknown';
     const showDate = currentTrack.date || 'Unknown';
     const venue = currentTrack.venue || '';
     const location = currentTrack.location || '';
-    const fullPlace = venue && location ? `${venue}, ${location}` : venue || location || '';
+    const place = venue && location ? `${venue}, ${location}` : venue || location || '';
 
     totalAttempts++;
     let correct = false;
@@ -289,11 +283,11 @@
       message = '🎉 Correct!';
     } else if (guess.slice(0, 2) === correctYear.slice(0, 2)) {
       streak = 0;
-      message = 'Wrong Year, Right Century!';
+      message = "Wrong Year, Right Century!";
     } else {
       streak = 0;
-      const variations = ['Not Quite!', 'Keep on Truckin'!', 'Try Another One!', 'So Close!'];
-      message = variations[Math.floor(Math.random() * variations.length)];
+      const phrases = ['Nope!', 'Try again!', 'Keep truckin'!', 'So close!', 'Not quite!'];
+      message = phrases[Math.floor(Math.random() * phrases.length)];
     }
 
     if (correctAttempts > siteHighScore) {
@@ -301,44 +295,20 @@
       localStorage.setItem('gd_site_highscore', siteHighScore);
     }
 
-    checkBadges();
     const resultEl = document.getElementById('result');
     resultEl.className = correct ? 'correct' : 'incorrect';
-    resultEl.textContent = `${message} You guessed: ${guess} — Correct Year: ${correctYear}\n\nSong: ${currentTrack.track}\nDate: ${showDate}${fullPlace ? `\n${fullPlace}` : ''}`;
+    resultEl.textContent = `${message} You guessed: ${guess} — Correct Year: ${correctYear}\n\nSong: ${currentTrack.track}\nDate: ${showDate}${place ? `\n${place}` : ''}`;
 
-    addToLog(`${currentTrack.track} — ${showDate}`);
     updateScore();
   }
 
   function updateScore() {
-    const scoreEl = document.getElementById('score');
-    scoreEl.textContent = `Score: ${correctAttempts}/${totalAttempts} | High Score: ${siteHighScore} | Streak: ${streak}`;
+    document.getElementById('score').textContent = `Score: ${correctAttempts}/${totalAttempts} | High Score: ${siteHighScore} | Streak: ${streak}`;
   }
 
-  function addToLog(entry) {
-    const logEl = document.getElementById('log');
-    const p = document.createElement('p');
-    p.textContent = entry;
-    logEl.appendChild(p);
-  }
-
-  function checkBadges() {
-    const decades = new Set(allTracks.map(t => t.year?.[2]));
-    const decadesGuessed = new Set();
-    const decadeMap = { '6': '1960s', '7': '1970s', '8': '1980s', '9': '1990s' };
-
-    if (streak === 3 && !badges.has('streak3')) {
-      badges.add('streak3');
-      alert('Badge Unlocked: First 3-streak! 🎶');
-    }
-    if (streak === 5 && !badges.has('streak5')) {
-      badges.add('streak5');
-      alert('Badge Unlocked: 5-streak Deadhead! 🌟');
-    }
-    if (streak === 10 && !badges.has('streak10')) {
-      badges.add('streak10');
-      alert('Badge Unlocked: 10 in a row! Legendary! 🐢');
-    }
+  function shareSite() {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => alert("Link copied to clipboard!"));
   }
 </script>
 
