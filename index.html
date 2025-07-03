@@ -38,13 +38,17 @@
       font-weight: bold;
     }
     .generate {
-      background-color: #cc0000;
+      background-color: #28a745;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      font-size: 1.2em;
     }
     .reveal {
       background-color: #0066cc;
     }
     .timed {
-      background-color: #ff9900;
+      background-color: #9933cc;
       font-size: 1em;
       padding: 0.4em 1em;
     }
@@ -114,21 +118,28 @@
       50% { text-shadow: 0 0 20px #00ff88; }
       100% { text-shadow: 0 0 5px #00ff88; }
     }
+    select {
+      margin-top: 1em;
+      padding: 0.4em;
+      font-size: 1em;
+      font-family: 'Comic Neue', cursive;
+    }
   </style>
 </head>
 <body>
   <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
       <span style="font-size: 2.2em; color: #228B22;">⚡💀</span>
-      <h1 style="font-size: 2.2em; color: yellow; margin: 0; font-weight: bold;">Guess the Dead Year</h1>
+      <h1 style="font-size: 2.4em; color: yellow; margin: 0; font-weight: 900;">Guess the Dead Year</h1>
       <span style="font-size: 2.2em; color: #228B22;">💀⚡</span>
     </div>
+    <p style="font-style: italic; margin-top: 0.5em; font-size: 0.9em;">1965–1995</p>
 
     <br />
     <audio id="audio" controls></audio>
     <br />
 
-    <button class="generate" onclick="loadRandomTrack()">Random Song Generator</button>
+    <button class="generate" onclick="loadRandomTrack()">Go</button>
     <br />
 
     <input type="text" id="yearGuess" placeholder="Year" maxlength="4" autocomplete="off" />
@@ -136,8 +147,17 @@
 
     <button class="reveal" onclick="revealAnswer()">Reveal Answer</button>
     <br />
-    <button class="timed" onclick="toggleTimedMode()">Toggle Timed Mode</button>
+    <button class="timed" onclick="toggleTimedMode()">Timed Mode</button>
+
     <div id="timerBar"></div>
+
+    <select id="decadeSelect" onchange="filterByDecade(this.value)">
+      <option value="">All Decades</option>
+      <option value="196">1960s</option>
+      <option value="197">1970s</option>
+      <option value="198">1980s</option>
+      <option value="199">1990s</option>
+    </select>
 
     <p id="result" class="neutral"></p>
     <p id="score">Score: 0/0 | High Score: 0 | Streak: 0</p>
@@ -152,8 +172,8 @@
   let correctAttempts = 0;
   let streak = 0;
   let siteHighScore = parseInt(localStorage.getItem('gd_site_highscore')) || 0;
-
   let allTracks = [];
+  let filteredTracks = [];
   let timedMode = false;
   let timer = null;
   let timeLeft = 20;
@@ -162,6 +182,7 @@
     try {
       const res = await fetch('tracks.json');
       allTracks = await res.json();
+      filteredTracks = [...allTracks];
       document.getElementById('result').textContent = '';
     } catch {
       document.getElementById('result').textContent = 'Could not load tracks. Please refresh!';
@@ -170,9 +191,9 @@
   loadTracksJson();
 
   function getRandomTrack() {
-    if (allTracks.length === 0) return null;
-    const index = Math.floor(Math.random() * allTracks.length);
-    return allTracks[index];
+    if (filteredTracks.length === 0) return null;
+    const index = Math.floor(Math.random() * filteredTracks.length);
+    return filteredTracks[index];
   }
 
   function loadRandomTrack() {
@@ -198,7 +219,6 @@
 
   function toggleTimedMode() {
     timedMode = !timedMode;
-    alert(`Timed Mode is now ${timedMode ? 'ON' : 'OFF'}`);
   }
 
   function startTimer() {
@@ -218,6 +238,14 @@
         bar.style.display = 'none';
       }
     }, 1000);
+  }
+
+  function filterByDecade(decadePrefix) {
+    if (!decadePrefix) {
+      filteredTracks = [...allTracks];
+    } else {
+      filteredTracks = allTracks.filter(track => track.year.startsWith(decadePrefix));
+    }
   }
 
   function revealAnswer() {
@@ -273,10 +301,10 @@
   }
 </script>
 
-  <footer style="font-size: 0.8em; text-align: center; margin-top: 2em; color: #ccc;">
-    <a href="https://github.com/Gignac77" target="_blank" rel="noopener noreferrer" style="color: #ccc; text-decoration: none;">
-      Built with Love by Matt - 7/1/25
-    </a>
-  </footer>
+<footer style="font-size: 0.8em; text-align: center; margin-top: 2em; color: #ccc;">
+  <a href="https://github.com/Gignac77" target="_blank" rel="noopener noreferrer" style="color: #ccc; text-decoration: none;">
+    Built with Love by Matt - 7/1/25
+  </a>
+</footer>
 </body>
 </html>
