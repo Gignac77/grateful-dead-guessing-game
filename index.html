@@ -1,4 +1,4 @@
-\<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -23,6 +23,7 @@
       max-width: 600px;
       margin: auto;
       width: 90%;
+      position: relative;
     }
     audio {
       width: 100%;
@@ -46,6 +47,28 @@
       height: 100px;
       border-radius: 50%;
       font-size: 1.2em;
+      position: relative;
+    }
+    .generate::after {
+      content: "";
+      position: absolute;
+      top: -15px;
+      left: -15px;
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      background: rgba(40, 167, 69, 0.3);
+      animation: pulse 1.5s infinite;
+      z-index: -1;
+      display: none;
+    }
+    .playing .generate::after {
+      display: block;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 0.6; }
+      50% { transform: scale(1.2); opacity: 0.3; }
+      100% { transform: scale(1); opacity: 0.6; }
     }
     .reveal {
       background-color: #0066cc;
@@ -92,16 +115,10 @@
       width: 6em;
       font-family: 'Comic Neue', cursive;
     }
-    #resultContainer {
-      margin-top: 1em;
-      padding: 1em;
-      border: 2px solid #444;
-      border-radius: 0.5em;
-      background-color: rgba(255, 255, 255, 0.05);
-    }
     #result {
+      margin-top: 1em;
       font-weight: bold;
-      font-size: 1.4em;
+      font-size: 1.5em;
       white-space: pre-line;
       min-height: 3em;
     }
@@ -117,7 +134,7 @@
     }
     #score {
       margin-top: 1em;
-      font-size: 1.1em;
+      font-size: 1.2em;
       color: #fff;
     }
     #thankYou {
@@ -156,10 +173,11 @@
     </div>
     <p style="font-style: italic; margin-top: 0.5em; font-size: 0.9em;">1965–1995</p>
 
+    <br />
     <audio id="audio" controls></audio>
     <br />
 
-    <button class="generate" onclick="loadRandomTrack()">Go</button>
+    <button class="generate" id="generateBtn" onclick="loadRandomTrack()">Go</button>
     <br />
 
     <input type="text" id="yearGuess" placeholder="Year" maxlength="4" autocomplete="off" />
@@ -179,10 +197,8 @@
       <option value="199">1990s</option>
     </select>
 
-    <div id="resultContainer">
-      <p id="result" class="neutral"></p>
-      <p id="score">Score: 0/0 | High Score: 0 | Streak: 0</p>
-    </div>
+    <p id="result" class="neutral"></p>
+    <p id="score">Score: 0/0 | High Score: 0 | Streak: 0</p>
 
     <a href="https://www.gofundme.com/f/our-friend-betty-cantorjackson-could-use-our-help" target="_blank" class="donate">🌸 Donate to Betty</a>
     <br />
@@ -195,13 +211,13 @@
   let totalAttempts = 0;
   let correctAttempts = 0;
   let streak = 0;
-  let hasGuessed = false;
   let siteHighScore = parseInt(localStorage.getItem('gd_site_highscore')) || 0;
   let allTracks = [];
   let filteredTracks = [];
   let timedMode = false;
   let timer = null;
   let timeLeft = 20;
+  let answerRevealed = false;
 
   async function loadTracksJson() {
     try {
@@ -209,6 +225,15 @@
       allTracks = await res.json();
       filteredTracks = [...allTracks];
       document.getElementById('result').textContent = '';
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const trackParam = urlParams.get('track');
+      if (trackParam) {
+        const track = allTracks.find(t => t.filename === trackParam);
+        if (track) {
+          loadSpecificTrack(track);
+        }
+      }
     } catch {
       document.getElementById('result').textContent = 'Could not load tracks. Please refresh!';
     }
@@ -222,18 +247,24 @@
   }
 
   function loadRandomTrack() {
+    answerRevealed = false;
     const track = getRandomTrack();
     if (!track) {
       document.getElementById('result').textContent = 'No tracks found!';
       return;
     }
-    hasGuessed = false;
+    loadSpecificTrack(track);
+  }
+
+  function loadSpecificTrack(track) {
     currentTrack = track;
     document.getElementById('audio').src = `audio/${track.filename}`;
     document.getElementById('audio').load();
     document.getElementById('audio').play().catch(() => {
       document.getElementById('result').textContent = 'Oops, no good vibes this time. Try again!';
     });
+
+    document.querySelector('.card').classList.add('playing');
     document.getElementById('result').textContent = '';
     document.getElementById('result').className = 'neutral';
     document.getElementById('yearGuess').value = '';
@@ -250,9 +281,11 @@
     const bar = document.getElementById('timerBar');
     bar.style.display = 'block';
     bar.style.width = '100%';
+
     timer = setInterval(() => {
       timeLeft--;
       bar.style.width = `${(timeLeft / 20) * 100}%`;
+
       if (timeLeft <= 0) {
         clearInterval(timer);
         revealAnswer();
@@ -262,16 +295,18 @@
   }
 
   function filterByDecade(decadePrefix) {
-    filteredTracks = decadePrefix
-      ? allTracks.filter(track => track.year.startsWith(decadePrefix))
-      : [...allTracks];
+    if (!decadePrefix) {
+      filteredTracks = [...allTracks];
+    } else {
+      filteredTracks = allTracks.filter(track => track.year.startsWith(decadePrefix));
+    }
   }
 
   function revealAnswer() {
-    if (hasGuessed || !currentTrack) return;
+    if (answerRevealed || !currentTrack) return;
+    answerRevealed = true;
     clearInterval(timer);
     document.getElementById('timerBar').style.display = 'none';
-    hasGuessed = true;
 
     let guess = document.getElementById('yearGuess').value.trim();
     if (/^\d{2}$/.test(guess)) {
@@ -296,12 +331,7 @@
       message = '🎉 Correct!';
     } else {
       streak = 0;
-      message = [
-        'Close but no dice!',
-        'Good try — not quite.',
-        'Keep on truckin\' — try again!',
-        'Swing and a miss!'
-      ][Math.floor(Math.random() * 4)];
+      message = ['Almost there!', 'Nice try!', 'Off by a tour!', 'Try another era!'][Math.floor(Math.random() * 4)];
     }
 
     if (correctAttempts > siteHighScore) {
@@ -311,17 +341,18 @@
 
     const resultEl = document.getElementById('result');
     resultEl.className = correct ? 'correct' : 'incorrect';
-    resultEl.textContent = `${message} You guessed: ${guess} — Correct Year: ${correctYear}\n\nSong: ${currentTrack.track}\nDate: ${showDate}${fullPlace ? `\n${fullPlace}` : ''}`;
+    resultEl.textContent = `${message} You guessed: ${guess} — Correct Year: ${correctYear}\n\nSong: ${currentTrack.track}\nDate: ${showDate}${fullPlace ? `\n${fullPlace}` : ''}\n\nGenerate a new song to continue.`;
 
     updateScore();
   }
 
   function updateScore() {
-    document.getElementById('score').textContent = `Score: ${correctAttempts}/${totalAttempts} | High Score: ${siteHighScore} | Streak: ${streak}`;
+    const scoreEl = document.getElementById('score');
+    scoreEl.textContent = `Score: ${correctAttempts}/${totalAttempts} | High Score: ${siteHighScore} | Streak: ${streak}`;
   }
 
   function copyShareLink() {
-    const link = window.location.href;
+    const link = currentTrack ? `${window.location.origin}${window.location.pathname}?track=${currentTrack.filename}` : window.location.href;
     navigator.clipboard.writeText(link).then(() => {
       alert('Link copied to clipboard!');
     });
@@ -330,7 +361,7 @@
 
 <footer style="font-size: 0.8em; text-align: center; margin-top: 2em; color: #ccc;">
   <a href="https://github.com/Gignac77" target="_blank" rel="noopener noreferrer" style="color: #ccc; text-decoration: none;">
-    Built with Love by Matt - 2025
+    Built with Love by Matt - 7/1/25
   </a>
 </footer>
 </body>
