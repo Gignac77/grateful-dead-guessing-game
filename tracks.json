@@ -1,3 +1,4 @@
+```json
 [
   {
     "year": "1979",
@@ -20,12 +21,42 @@
     "location": "Uniondale, NY"
   },
   {
+    "year": "1971",
+    "date": "1971-01-24",
+    "track": "Sugar Magnolia",
+    "filename": "012471_Sugar_Magnolia.mp3",
+    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/012471_Sugar_Magnolia.mp3",
+    "relisten": "https://relisten.net/grateful-dead/1971-01-24",
+    "venue": "University of Hartford",
+    "location": "Hartford, CT"
+  },
+  {
+    "year": "1966",
+    "date": "1966-02-25",
+    "track": "Good Morning Lil' School Girl",
+    "filename": "022566_Good_Morning_Lil_School_Girl.mp3",
+    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/022566_Good_Morning_Lil_School_Girl.mp3",
+    "relisten": "https://relisten.net/grateful-dead/1966-02-25",
+    "venue": "California Hall",
+    "location": "San Francisco, CA"
+  },
+  {
+    "year": "1966",
+    "date": "1966-02-25",
+    "track": "She's On The Road Again",
+    "filename": "022566_She's_On_The_Road_Again.mp3",
+    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/022566_She's_On_The_Road_Again.mp3",
+    "relisten": "https://relisten.net/grateful-dead/1966-02-25",
+    "venue": "California Hall",
+    "location": "San Francisco, CA"
+  },
+  {
     "year": "1968",
     "date": "1968-03-03",
     "track": "It Hurts Me Too",
     "filename": "030368_It_Hurts_Me_Too.mp3",
     "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/030368_It_Hurts_Me_Too.mp3",
-    "relisten": "https://relisten.net/grateful-dead/2068-03-03",
+    "relisten": "https://relisten.net/grateful-dead/1968-03-03",
     "venue": "Haight Street",
     "location": "San Francisco, CA"
   },
@@ -40,12 +71,42 @@
     "location": "Worcester, MA"
   },
   {
+    "year": "1965",
+    "date": "1965-03-11",
+    "track": "Early Morning Rain",
+    "filename": "031165_Early_Morning_Rain.mp3",
+    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/031165_Early_Morning_Rain.mp3",
+    "relisten": "https://relisten.net/grateful-dead/1965-03-11",
+    "venue": "Magoo's Pizza Parlor",
+    "location": "Menlo Park, CA"
+  },
+  {
+    "year": "1965",
+    "date": "1965-03-11",
+    "track": "I Know You Rider",
+    "filename": "031165_I_Know_You_Rider.mp3",
+    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/031165_I_Know_You_Rider.mp3",
+    "relisten": "https://relisten.net/grateful-dead/1965-03-11",
+    "venue": "Magoo's Pizza Parlor",
+    "location": "Menlo Park, CA"
+  },
+  {
+    "year": "1992",
+    "date": "1992-03-16",
+    "track": "Johnny B Goode",
+    "filename": "031692_Johnny_B_Goode.mp3",
+    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/031692_Johnny_B_Goode.mp3",
+    "relisten": "https://relisten.net/grateful-dead/1992-03-16",
+    "venue": "Capital Centre",
+    "location": "Landover, MD"
+  },
+  {
     "year": "1967",
     "date": "1967-03-18",
     "track": "Cold Rain and Snow",
     "filename": "031867_Cold_Rain_and_Snow.mp3",
     "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/031867_Cold_Rain_and_Snow.mp3",
-    "relisten": "https://relisten.net/grateful-dead/2067-03-18",
+    "relisten": "https://relisten.net/grateful-dead/1967-03-18",
     "venue": "Winterland Arena",
     "location": "San Francisco, CA"
   },
@@ -100,14 +161,74 @@
     "location": "Passaic, NJ"
   },
   {
+    "year": "1990",
+    "date": "1990-04-03",
+    "track": "Scarlet Begonias",
+    "filename": "040390_Scarlet_Begonias.mp3",
+    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/040390_Scarlet_Begonias.mp3",
+    "relisten": "https://relisten.net/grateful-dead/1990-04-03",
+    "venue": "The Omni",
+    "location": "Atlanta, GA"
+  },
+  {
+    "year": "1990",
+    "date": "1990-04-03",
+    "track": "Tennessee Jed",
+    "filename": "040390_Tennessee_Jed.mp3",
+    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/040390_Tennessee_Jed.mp3",
+    "relisten": "https://relisten.net/grateful-dead/1990-04-03",
+    "venue": "The Omni",
+    "location": "Atlanta, GA"
+  },
+  {
+    "year": "1988",
+    "date": "1988-04-04",
+    "track": "Dear Mr Fantasy",
+    "filename": "0404088_Dear_Mr_Fantasy.mp3",
+    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/0404088_Dear_Mr_Fantasy.mp3",
+    "relisten": "https://relisten.net/grateful-dead/1988-04-04",
+    "venue": "Brendan Byrne Arena",
+    "location": "East Rutherford, NJ"
+  },
+  {
+    "year": "1988",
+    "date": "1988-04-04",
+    "track": "Alabama Getaway",
+    "filename": "040488_Alabama_Getaway.mp3",
+    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/040488_Alabama_Getaway.mp3",
+    "relisten": "https://relisten.net/grateful-dead/1988-04-04",
+    "venue": "Brendan Byrne Arena",
+    "location": "East Rutherford, NJ"
+  },
+  {
     "year": "1967",
     "date": "1967-04-06",
     "track": "Cream Puff War",
     "filename": "040667_Cream_Puff_War.mp3",
     "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/040667_Cream_Puff_War.mp3",
-    "relisten": "https://relisten.net/grateful-dead/2067-04-06",
+    "relisten": "https://relisten.net/grateful-dead/1967-04-06",
     "venue": "Unknown",
     "location": "Uknown"
+  },
+  {
+    "year": "1971",
+    "date": "1971-04-21",
+    "track": "Big Boss Man",
+    "filename": "042171_Big_Boss_Man.mp3",
+    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/042171_Big_Boss_Man.mp3",
+    "relisten": "https://relisten.net/grateful-dead/1971-04-21",
+    "venue": "Purdue University",
+    "location": "West Lafayette, IN"
+  },
+  {
+    "year": "1971",
+    "date": "1971-04-21",
+    "track": "Mama Tried",
+    "filename": "042171_Mama_Tried.mp3",
+    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/042171_Mama_Tried.mp3",
+    "relisten": "https://relisten.net/grateful-dead/1971-04-21",
+    "venue": "Purdue University",
+    "location": "West Lafayette, IN"
   },
   {
     "year": "1969",
@@ -260,23 +381,63 @@
     "location": "Buffalo, NY"
   },
   {
-    "year": "2066",
-    "date": "2066-05-19",
+    "year": "1966",
+    "date": "1966-05-19",
     "track": "Beat it on Down the Line",
-    "filename": "051966_BIODTL.mp3",
-    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/051966_BIODTL.mp3",
-    "relisten": "https://relisten.net/grateful-dead/2066-05-19",
+    "filename": "051966_Beat_it_on_Down_the_Line.mp3",
+    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/051966_Beat_it_on_Down_the_Line.mp3",
+    "relisten": "https://relisten.net/grateful-dead/1966-05-19",
     "venue": "Avalon Ballroom",
     "location": "San Francisco, CA"
   },
   {
-    "year": "2066",
-    "date": "2066-05-19",
+    "year": "1966",
+    "date": "1966-05-19",
     "track": "I Know You Rider",
     "filename": "051966_I_Know_You_Rider.mp3",
     "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/051966_I_Know_You_Rider.mp3",
-    "relisten": "https://relisten.net/grateful-dead/2066-05-19",
+    "relisten": "https://relisten.net/grateful-dead/1966-05-19",
     "venue": "Avalon Ballroom",
+    "location": "San Francisco, CA"
+  },
+  {
+    "year": "1992",
+    "date": "1992-05-19",
+    "track": "I Know You Rider",
+    "filename": "051992_I_Know_You_Rider.mp3",
+    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/051992_I_Know_You_Rider.mp3",
+    "relisten": "https://relisten.net/grateful-dead/1992-05-19",
+    "venue": "Cal Expo Amphitheatre",
+    "location": "Sacramento, CA"
+  },
+  {
+    "year": "1973",
+    "date": "1973-05-26",
+    "track": "Around and Around",
+    "filename": "052673_Around_and_Around.mp3",
+    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/052673_Around_and_Around.mp3",
+    "relisten": "https://relisten.net/grateful-dead/1973-05-26",
+    "venue": "Keystone Berkeley",
+    "location": "Berkeley, CA"
+  },
+  {
+    "year": "1973",
+    "date": "1973-05-26",
+    "track": "They Love Each Other",
+    "filename": "052673_They_Love_Each_Other.mp3",
+    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/052673_They_Love_Each_Other.mp3",
+    "relisten": "https://relisten.net/grateful-dead/1973-05-26",
+    "venue": "Keystone Berkeley",
+    "location": "Berkeley, CA"
+  },
+  {
+    "year": "1968",
+    "date": "1968-06-08",
+    "track": "Morning Dew",
+    "filename": "060868_Morning_Dew.mp3",
+    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/060868_Morning_Dew.mp3",
+    "relisten": "https://relisten.net/grateful-dead/1968-06-08",
+    "venue": "Carousel Ballroom",
     "location": "San Francisco, CA"
   },
   {
@@ -390,6 +551,16 @@
     "location": "Buffalo, NY"
   },
   {
+    "year": "1995",
+    "date": "1995-07-09",
+    "track": "Box of Rain",
+    "filename": "070995_Box_of_Rain.mp3",
+    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/070995_Box_of_Rain.mp3",
+    "relisten": "https://relisten.net/grateful-dead/1995-07-09",
+    "venue": "Soldier Field",
+    "location": "Chicago, IL"
+  },
+  {
     "year": "1976",
     "date": "1976-07-18",
     "track": "Might As Well",
@@ -418,6 +589,16 @@
     "relisten": "https://relisten.net/grateful-dead/1988-07-29",
     "venue": "Laguna Seca Raceway",
     "location": "Monterey, CA"
+  },
+  {
+    "year": "1966",
+    "date": "1966-08-01",
+    "track": "I'm a Hog for You",
+    "filename": "080166_I'm_a_Hog_for_You.mp3",
+    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/080166_I'm_a_Hog_for_You.mp3",
+    "relisten": "https://relisten.net/grateful-dead/1966-08-01",
+    "venue": "PNE Garden Auditorium",
+    "location": "Vancouver, BC, Canada"
   },
   {
     "year": "1974",
@@ -500,6 +681,16 @@
     "location": "Venetta, Oregon"
   },
   {
+    "year": "1983",
+    "date": "1983-09-10",
+    "track": "Cumberland Blues",
+    "filename": "091083_Cumberland_Blues.mp3",
+    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/091083_Cumberland_Blues.mp3",
+    "relisten": "https://relisten.net/grateful-dead/1983-09-10",
+    "venue": "Santa Fe Downs",
+    "location": "Santa Fe, NM"
+  },
+  {
     "year": "1991",
     "date": "1991-09-10",
     "track": "Deal",
@@ -508,6 +699,16 @@
     "relisten": "https://relisten.net/grateful-dead/1991-09-10",
     "venue": "Madison Square Garden",
     "location": "New York, NY"
+  },
+  {
+    "year": "1973",
+    "date": "1973-09-11",
+    "track": "Mississippi Half Step Uptown Toodeloo",
+    "filename": "091173_Mississippi_Half_Step_Uptown_Toodeloo.mp3",
+    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/091173_Mississippi_Half_Step_Uptown_Toodeloo.mp3",
+    "relisten": "https://relisten.net/grateful-dead/1973-09-11",
+    "venue": "William and Mary Hall",
+    "location": "Williamsburg, VA"
   },
   {
     "year": "1981",
@@ -528,6 +729,46 @@
     "relisten": "https://relisten.net/grateful-dead/1981-09-12",
     "venue": "The Greek Theater",
     "location": "Berkeley, CA"
+  },
+  {
+    "year": "1987",
+    "date": "1987-09-18",
+    "track": "La Bamba",
+    "filename": "091887_La_Bamba.mp3",
+    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/091887_La_Bamba.mp3",
+    "relisten": "https://relisten.net/grateful-dead/1987-09-18",
+    "venue": "Madison Square Garden",
+    "location": "New York, NY"
+  },
+  {
+    "year": "1987",
+    "date": "1987-09-18",
+    "track": "Sugaree",
+    "filename": "091887_Sugaree.mp3",
+    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/091887_Sugaree.mp3",
+    "relisten": "https://relisten.net/grateful-dead/1987-09-18",
+    "venue": "Madison Square Garden",
+    "location": "New York, NY"
+  },
+  {
+    "year": "1987",
+    "date": "1987-10-01",
+    "track": "Althea",
+    "filename": "100187_Althea.mp3",
+    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/100187_Althea.mp3",
+    "relisten": "https://relisten.net/grateful-dead/1987-10-01",
+    "venue": "Shoreline Amphitheatre",
+    "location": "Mountain View, CA"
+  },
+  {
+    "year": "1987",
+    "date": "1987-10-01",
+    "track": "Saint of Circumstance",
+    "filename": "100187_Saint_of_Circumstance.mp3",
+    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/100187_Saint_of_Circumstance.mp3",
+    "relisten": "https://relisten.net/grateful-dead/1987-10-01",
+    "venue": "Shoreline Amphitheatre",
+    "location": "Mountain View, CA"
   },
   {
     "year": "1982",
@@ -568,6 +809,56 @@
     "relisten": "https://relisten.net/grateful-dead/1984-10-12",
     "venue": "Augusta Civic Center",
     "location": "Augusta, ME"
+  },
+  {
+    "year": "1984",
+    "date": "1984-10-15",
+    "track": "It's All Over Now Baby Blue",
+    "filename": "101584_Its_All_Over_Now_Baby_Blue.mp3",
+    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/101584_Its_All_Over_Now_Baby_Blue.mp3",
+    "relisten": "https://relisten.net/grateful-dead/1984-10-15",
+    "venue": "Brendan Byrne Arena",
+    "location": "East Rutherford, NJ"
+  },
+  {
+    "year": "1984",
+    "date": "1984-10-15",
+    "track": "Playin In The Band",
+    "filename": "101584_Playin_In_The_Band.mp3",
+    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/101584_Playin_In_The_Band.mp3",
+    "relisten": "https://relisten.net/grateful-dead/1984-10-15",
+    "venue": "Brendan Byrne Arena",
+    "location": "East Rutherford, NJ"
+  },
+  {
+    "year": "1984",
+    "date": "1984-10-20",
+    "track": "Jack Straw",
+    "filename": "102084_Jack_Straw.mp3",
+    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/102084_Jack_Straw.mp3",
+    "relisten": "https://relisten.net/grateful-dead/1984-10-20",
+    "venue": "Brendan Byrne Arena",
+    "location": "East Rutherford, NJ"
+  },
+  {
+    "year": "1983",
+    "date": "1983-10-21",
+    "track": "I Need a Miracle",
+    "filename": "102183_I_Need_a_Miracle.mp3",
+    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/102183_I_Need_a_Miracle.mp3",
+    "relisten": "https://relisten.net/grateful-dead/1983-10-21",
+    "venue": "The Centrum",
+    "location": "Worcester, MA"
+  },
+  {
+    "year": "1983",
+    "date": "1983-10-21",
+    "track": "Touch of Grey",
+    "filename": "102183_Touch_of_Grey.mp3",
+    "url": "https://gignac77.github.io/grateful-dead-guessing-game/audio/102183_Touch_of_Grey.mp3",
+    "relisten": "https://relisten.net/grateful-dead/1983-10-21",
+    "venue": "The Centrum",
+    "location": "Worcester, MA"
   },
   {
     "year": "1983",
