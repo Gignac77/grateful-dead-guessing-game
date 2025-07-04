@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Guess the Dead Year</title>
   <link href="https://fonts.googleapis.com/css2?family=Comic+Neue&display=swap" rel="stylesheet">
   <style>
@@ -12,6 +13,7 @@
       background: url('https://cdn.mos.cms.futurecdn.net/HuGGeENt6kGyixe3hT9tnY.jpg');
       background-color: #111;
       color: #eee;
+      margin: 0;
     }
     .card {
       background: rgba(0, 0, 0, 0.8);
@@ -20,58 +22,43 @@
       box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
       max-width: 600px;
       margin: auto;
+      width: 90%;
     }
     audio {
       width: 100%;
       margin: 1em 0;
       border: none;
     }
-    button, input[type="text"] {
-      font-family: 'Comic Neue', cursive;
-      font-size: 1.1em;
-      padding: 0.75em 1.5em;
-      margin: 0.6em 0;
-      border-radius: 0.5em;
+    button {
+      padding: 0.6em 1.2em;
+      font-size: 1.2em;
+      color: white;
       border: none;
+      border-radius: 0.5em;
+      margin-top: 1em;
       cursor: pointer;
+      font-family: 'Comic Neue', cursive;
       font-weight: bold;
-      box-sizing: border-box;
-      transition: opacity 0.3s ease;
-    }
-    button:hover {
-      opacity: 0.9;
     }
     .generate {
-      background-color: #cc0000;
-      color: white;
-      width: 80px;
-      height: 80px;
+      background-color: #28a745;
+      width: 100px;
+      height: 100px;
       border-radius: 50%;
-      font-size: 0.9em;
-      padding: 0.5em;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      line-height: 1.2em;
+      font-size: 1.2em;
+      animation: pulse 1.5s infinite;
     }
     .reveal {
       background-color: #0066cc;
-      color: white;
     }
-    .toggle-timer {
-      background-color: #228B22;
-      color: white;
-      font-size: 0.95em;
-      padding: 0.6em 1.2em;
-      margin: 0.5em auto 1em auto;
-      max-width: 180px;
-      display: block;
-    }
-    .share {
-      background-color: #444;
-      color: white;
+    .timed {
+      background-color: #9933cc;
       font-size: 1em;
-      margin-top: 1em;
+      padding: 0.4em 1em;
+      opacity: 0.6;
+    }
+    .timed.active {
+      opacity: 1;
     }
     .donate {
       display: inline-block;
@@ -82,6 +69,18 @@
       font-weight: bold;
       font-size: 1em;
       padding: 0.5em 1.5em;
+      border-radius: 0.5em;
+      font-family: 'Comic Neue', cursive;
+    }
+    .share {
+      display: inline-block;
+      margin-top: 1em;
+      background-color: #4444aa;
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 0.9em;
+      padding: 0.4em 1em;
       border-radius: 0.5em;
       font-family: 'Comic Neue', cursive;
     }
@@ -96,6 +95,7 @@
       text-align: center;
       font-weight: bold;
       width: 6em;
+      font-family: 'Comic Neue', cursive;
     }
     #result {
       margin-top: 1em;
@@ -117,218 +117,224 @@
     #score {
       margin-top: 1em;
       font-size: 1.2em;
-      color: white;
+      color: #fff;
+      background-color: rgba(255,255,255,0.1);
+      border: 1px solid #eee;
+      padding: 1em;
+      border-radius: 1em;
     }
     #thankYou {
       margin-top: 0.5em;
       color: white;
       font-style: italic;
-      margin-bottom: 1em;
-    }
-    #timerBarContainer {
-      width: 100%;
-      background-color: #444;
-      border-radius: 5px;
-      height: 10px;
-      margin-top: 10px;
-      display: none;
     }
     #timerBar {
-      height: 100%;
       width: 100%;
-      background-color: #00ff88;
-      border-radius: 5px;
+      height: 10px;
+      background: linear-gradient(to right, #00ff88, #ff0000);
       transition: width 1s linear;
+      margin-top: 1em;
+      border-radius: 1em;
+      display: none;
     }
     @keyframes glow {
       0% { text-shadow: 0 0 5px #00ff88; }
       50% { text-shadow: 0 0 20px #00ff88; }
       100% { text-shadow: 0 0 5px #00ff88; }
     }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+    }
+    select {
+      margin-top: 1em;
+      padding: 0.4em;
+      font-size: 1em;
+      font-family: 'Comic Neue', cursive;
+    }
   </style>
 </head>
 <body>
   <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-      <span style="font-size: 2.4em; color: yellow;">⚡💀</span>
-      <h1 style="font-size: 2.4em; color: yellow; margin: 0; font-weight: bold;">Guess the Dead Year</h1>
-      <span style="font-size: 2.4em; color: yellow;">💀⚡</span>
+      <span style="font-size: 2.2em; color: #228B22;">⚡💀</span>
+      <h1 style="font-size: 2.4em; color: yellow; margin: 0; font-weight: 900;">Guess the Dead Year</h1>
+      <span style="font-size: 2.2em; color: #228B22;">💀⚡</span>
     </div>
+    <p style="font-style: italic; margin-top: 0.5em; font-size: 0.9em;">1965–1995</p>
 
     <br />
     <audio id="audio" controls></audio>
     <br />
 
-    <button class="generate" onclick="loadRandomTrack()">🔁<br>Random<br>Song</button>
-    <button class="toggle-timer" onclick="toggleTimer()">⏱️ Timed Mode (Off)</button>
-
-    <div id="timerBarContainer">
-      <div id="timerBar"></div>
-    </div>
+    <button class="generate" onclick="loadRandomTrack()">Go</button>
+    <br />
 
     <input type="text" id="yearGuess" placeholder="Year" maxlength="4" autocomplete="off" />
+    <br />
 
-    <button class="reveal" onclick="revealAnswer()">Reveal Answer</button>
+    <button class="reveal" onclick="revealAnswer()">Check Answer</button>
+    <br />
+    <button class="timed" onclick="toggleTimedMode(this)">Timed Mode</button>
+
+    <div id="timerBar"></div>
+
+    <select id="decadeSelect" onchange="filterByDecade(this.value)">
+      <option value="">All Decades</option>
+      <option value="196">1960s</option>
+      <option value="197">1970s</option>
+      <option value="198">1980s</option>
+      <option value="199">1990s</option>
+    </select>
+
     <p id="result" class="neutral"></p>
     <p id="score">Score: 0/0 | High Score: 0 | Streak: 0</p>
 
     <a href="https://www.gofundme.com/f/our-friend-betty-cantorjackson-could-use-our-help" target="_blank" class="donate">🌸 Donate to Betty</a>
+    <br />
+    <a class="share" href="#" onclick="copyShareLink()">🔗 Share This With a Friend</a>
     <p id="thankYou">Thank a Taper</p>
-
-    <button class="share" onclick="shareGame()">📤 Share with a Friend</button>
   </div>
 
-  <footer style="font-size: 0.8em; text-align: center; margin-top: 2em; color: #ccc;">
-    <a href="https://github.com/Gignac77" target="_blank" rel="noopener noreferrer" style="color: #ccc; text-decoration: none;">
-      Built with Love by Matt - 7/1/25
-    </a>
-  </footer>
+<script>
+let currentTrack = null;
+let totalAttempts = 0;
+let correctAttempts = 0;
+let streak = 0;
+let siteHighScore = parseInt(localStorage.getItem('gd_site_highscore')) || 0;
+let allTracks = [];
+let filteredTracks = [];
+let timedMode = false;
+let timer = null;
+let timeLeft = 20;
+let answerRevealed = false;
 
-  <script>
-    let currentTrack = null;
-    let totalAttempts = 0;
-    let correctAttempts = 0;
-    let streak = 0;
-    let allTracks = [];
-    let siteHighScore = parseInt(localStorage.getItem('gd_site_highscore')) || 0;
-    let timerActive = false;
-    let timer = null;
-    let timerSeconds = 20;
+async function loadTracksJson() {
+  try {
+    const res = await fetch('tracks.json');
+    allTracks = await res.json();
+    filteredTracks = [...allTracks];
+    document.getElementById('result').textContent = '';
+  } catch {
+    document.getElementById('result').textContent = 'Could not load tracks. Please refresh!';
+  }
+}
+loadTracksJson();
 
-    async function loadTracksJson() {
-      try {
-        const res = await fetch('tracks.json');
-        allTracks = await res.json();
-        document.getElementById('result').textContent = '';
-      } catch {
-        document.getElementById('result').textContent = 'Could not load tracks. Please refresh!';
-      }
-    }
-    loadTracksJson();
+function getRandomTrack() {
+  if (filteredTracks.length === 0) return null;
+  const index = Math.floor(Math.random() * filteredTracks.length);
+  return filteredTracks[index];
+}
 
-    function getRandomTrack() {
-      if (allTracks.length === 0) return null;
-      const index = Math.floor(Math.random() * allTracks.length);
-      return allTracks[index];
-    }
+function loadRandomTrack() {
+  const track = getRandomTrack();
+  if (!track) {
+    document.getElementById('result').textContent = 'No tracks found!';
+    return;
+  }
 
-    function loadRandomTrack() {
-      const track = getRandomTrack();
-      if (!track) {
-        document.getElementById('result').textContent = 'No tracks found!';
-        return;
-      }
-      currentTrack = track;
+  currentTrack = track;
+  answerRevealed = false;
+  document.getElementById('audio').src = `audio/${track.filename}`;
+  document.getElementById('audio').load();
+  document.getElementById('audio').play().catch(() => {
+    document.getElementById('result').textContent = 'Oops, no good vibes this time. Try again!';
+  });
 
-      const audioEl = document.getElementById('audio');
-      audioEl.src = `audio/${track.filename}`;
-      audioEl.load();
-      audioEl.play().catch(() => {
-        document.getElementById('result').textContent = 'Oops, no good vibes this time. Try again!';
-      });
+  document.getElementById('result').textContent = '';
+  document.getElementById('result').className = 'neutral';
+  document.getElementById('yearGuess').value = '';
 
-      document.getElementById('result').textContent = '';
-      document.getElementById('result').className = 'neutral';
-      document.getElementById('yearGuess').value = '';
+  if (timedMode) startTimer();
+}
 
-      if (timerActive) startTimer();
-    }
+function toggleTimedMode(btn) {
+  timedMode = !timedMode;
+  btn.classList.toggle('active', timedMode);
+}
 
-    function revealAnswer() {
-      if (!currentTrack) return;
-      let guess = document.getElementById('yearGuess').value.trim();
+function startTimer() {
+  clearInterval(timer);
+  timeLeft = 20;
+  const bar = document.getElementById('timerBar');
+  bar.style.display = 'block';
+  bar.style.width = '100%';
 
-      if (/^\d{2}$/.test(guess)) {
-        const twoDigit = parseInt(guess, 10);
-        guess = (twoDigit >= 30 ? '19' : '20') + guess;
-      }
+  timer = setInterval(() => {
+    timeLeft--;
+    bar.style.width = `${(timeLeft / 20) * 100}%`;
 
-      const correctYear = currentTrack.year || 'Unknown';
-      totalAttempts++;
-      let correct = false;
-      let message = '';
-
-      if (guess === correctYear) {
-        correctAttempts++;
-        streak++;
-        correct = true;
-        message = '🎉 Correct!';
-      } else if (guess.slice(0, 2) === correctYear.slice(0, 2)) {
-        streak = 0;
-        message = 'Not Quite! (Right Century)';
-      } else {
-        streak = 0;
-        message = 'Not Quite!';
-      }
-
-      if (correctAttempts > siteHighScore) {
-        siteHighScore = correctAttempts;
-        localStorage.setItem('gd_site_highscore', siteHighScore);
-      }
-
-      const resultEl = document.getElementById('result');
-      resultEl.className = correct ? 'correct' : 'incorrect';
-      resultEl.textContent = `${message} You guessed: ${guess} — Correct Year: ${correctYear}\n\nSong: ${currentTrack.track}\nDate: ${currentTrack.date}`;
-
-      updateScore();
-      if (timerActive) stopTimer();
-    }
-
-    function updateScore() {
-      const scoreEl = document.getElementById('score');
-      scoreEl.textContent = `Score: ${correctAttempts}/${totalAttempts} | High Score: ${siteHighScore} | Streak: ${streak}`;
-    }
-
-    function toggleTimer() {
-      timerActive = !timerActive;
-      document.querySelector('.toggle-timer').textContent = `⏱️ Timed Mode (${timerActive ? 'On' : 'Off'})`;
-      if (!timerActive) stopTimer();
-    }
-
-    function startTimer() {
-      stopTimer();
-      const bar = document.getElementById('timerBar');
-      const barContainer = document.getElementById('timerBarContainer');
-      bar.style.width = '100%';
-      barContainer.style.display = 'block';
-
-      let secondsLeft = timerSeconds;
-      const interval = 1000;
-
-      timer = setInterval(() => {
-        secondsLeft--;
-        const percent = (secondsLeft / timerSeconds) * 100;
-        bar.style.width = percent + '%';
-        bar.style.backgroundColor = percent > 50 ? '#00ff88' : percent > 20 ? '#ffaa00' : '#ff4444';
-
-        if (secondsLeft <= 0) {
-          clearInterval(timer);
-          revealAnswer();
-          barContainer.style.display = 'none';
-        }
-      }, interval);
-    }
-
-    function stopTimer() {
+    if (timeLeft <= 0) {
       clearInterval(timer);
-      document.getElementById('timerBarContainer').style.display = 'none';
+      revealAnswer();
+      bar.style.display = 'none';
     }
+  }, 1000);
+}
 
-    function shareGame() {
-      const url = "https://gignac77.github.io/grateful-dead-guessing-game/";
-      if (navigator.share) {
-        navigator.share({
-          title: "Guess the Dead Year",
-          url: url
-        }).catch(console.error);
-      } else {
-        navigator.clipboard.writeText(url).then(() => {
-          alert("Link copied to clipboard!");
-        }).catch(() => {
-          alert("Could not copy link. Try manually copying the address bar.");
-        });
-      }
-    }
-  </script>
+function filterByDecade(decadePrefix) {
+  filteredTracks = !decadePrefix ? [...allTracks] : allTracks.filter(t => t.year.startsWith(decadePrefix));
+}
+
+function revealAnswer() {
+  if (!currentTrack || answerRevealed) return;
+  answerRevealed = true;
+  clearInterval(timer);
+  document.getElementById('timerBar').style.display = 'none';
+
+  let guess = document.getElementById('yearGuess').value.trim();
+  if (/^\d{2}$/.test(guess)) guess = (parseInt(guess, 10) >= 30 ? '19' : '20') + guess;
+
+  const correctYear = currentTrack.year || 'Unknown';
+  const showDate = currentTrack.date || 'Unknown';
+  const venue = currentTrack.venue || '';
+  const location = currentTrack.location || '';
+  const fullPlace = venue && location ? `${venue}, ${location}` : venue || location || '';
+
+  totalAttempts++;
+  let correct = false;
+  let message = '';
+
+  if (guess === correctYear) {
+    correctAttempts++;
+    streak++;
+    correct = true;
+    message = 'Correct!';
+  } else {
+    streak = 0;
+    message = 'Not Quite!';
+  }
+
+  if (correctAttempts > siteHighScore) {
+    siteHighScore = correctAttempts;
+    localStorage.setItem('gd_site_highscore', siteHighScore);
+  }
+
+  const resultEl = document.getElementById('result');
+  resultEl.className = correct ? 'correct' : 'incorrect';
+  resultEl.textContent = `${message}\nYou guessed: ${guess} — Correct Year: ${correctYear}\n\nSong: ${currentTrack.track}\nDate: ${showDate}${fullPlace ? `\n${fullPlace}` : ''}`;
+  updateScore();
+}
+
+function updateScore() {
+  const scoreEl = document.getElementById('score');
+  scoreEl.textContent = `Score: ${correctAttempts}/${totalAttempts} | High Score: ${siteHighScore} | Streak: ${streak}`;
+}
+
+function copyShareLink() {
+  const link = window.location.href;
+  navigator.clipboard.writeText(link).then(() => {
+    alert('Link copied to clipboard!');
+  });
+}
+</script>
+
+<footer style="font-size: 0.8em; text-align: center; margin-top: 2em; color: #ccc;">
+  <a href="https://github.com/Gignac77" target="_blank" rel="noopener noreferrer" style="color: #ccc; text-decoration: none;">
+    Built with Love by Matt - 7/25
+  </a>
+</footer>
 </body>
 </html>
