@@ -205,7 +205,7 @@ let streak = 0;
 let siteHighScore = parseInt(localStorage.getItem('gd_site_highscore')) || 0;
 let allTracks = [];
 let filteredTracks = [];
-let availableTracksForSession = []; // NEW: Tracks available for the current session
+let availableTracksForSession = []; // Tracks available for the current session
 let timedMode = false;
 let timer = null;
 let timeLeft = 20;
@@ -216,7 +216,7 @@ async function loadTracksJson() {
     const res = await fetch('tracks.json');
     allTracks = await res.json();
     filteredTracks = [...allTracks]; // Initialize filteredTracks with all songs
-    initializeSessionTracks(); // NEW: Initialize session tracks on load
+    initializeSessionTracks(); // Initialize session tracks on load
     document.getElementById('result').textContent = '';
   } catch {
     document.getElementById('result').textContent = 'Could not load tracks. Please refresh!';
@@ -224,7 +224,7 @@ async function loadTracksJson() {
 }
 loadTracksJson();
 
-// NEW: Function to initialize or reset available tracks for the session
+// Function to initialize or reset available tracks for the session
 function initializeSessionTracks() {
     availableTracksForSession = [...filteredTracks]; // Start with all currently filtered tracks
     // Shuffle the array to ensure randomness when drawing songs
@@ -234,7 +234,7 @@ function initializeSessionTracks() {
     }
 }
 
-// MODIFIED: getRandomTrack now pulls from availableTracksForSession
+// getRandomTrack now pulls from availableTracksForSession
 function getRandomTrack() {
   if (availableTracksForSession.length === 0) {
     // If all songs have been played, re-enable all filtered songs
@@ -302,7 +302,7 @@ function startTimer() {
   }, 1000);
 }
 
-// MODIFIED: filterByDecade now also re-initializes session tracks
+// filterByDecade now also re-initializes session tracks
 function filterByDecade(decadePrefix) {
   filteredTracks = !decadePrefix ? [...allTracks] : allTracks.filter(t => t.year.startsWith(decadePrefix));
   initializeSessionTracks(); // Reset available tracks based on new filter
@@ -367,6 +367,15 @@ function copyShareLink() {
     alert('Could not copy link. Please copy manually: ' + link);
   });
 }
+
+// NEW: Add event listener for Enter key
+document.addEventListener('keydown', function(event) {
+    // Check if the focused element is the yearGuess input and the key is Enter
+    if (document.activeElement === document.getElementById('yearGuess') && event.key === 'Enter') {
+        event.preventDefault(); // Prevent default Enter key behavior (e.g., form submission)
+        revealAnswer(); // Trigger the check answer function
+    }
+});
 </script>
 
 <footer style="font-size: 0.8em; text-align: center; margin-top: 2em; color: #ccc;">
