@@ -1,3 +1,8 @@
+Okay, I will apply the "no repeats in session" logic to your provided HTML and JavaScript, ensuring no design changes are made unless you specifically request them.
+
+Here's the updated `index.html` file with the JavaScript modifications:
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -205,6 +210,7 @@ let streak = 0;
 let siteHighScore = parseInt(localStorage.getItem('gd_site_highscore')) || 0;
 let allTracks = [];
 let filteredTracks = [];
+let availableTracksForSession = []; // NEW: Tracks available for the current session
 let timedMode = false;
 let timer = null;
 let timeLeft = 20;
@@ -214,7 +220,8 @@ async function loadTracksJson() {
   try {
     const res = await fetch('tracks.json');
     allTracks = await res.json();
-    filteredTracks = [...allTracks];
+    filteredTracks = [...allTracks]; // Initialize filteredTracks with all songs
+    initializeSessionTracks(); // NEW: Initialize session tracks on load
     document.getElementById('result').textContent = '';
   } catch {
     document.getElementById('result').textContent = 'Could not load tracks. Please refresh!';
@@ -222,16 +229,36 @@ async function loadTracksJson() {
 }
 loadTracksJson();
 
+// NEW: Function to initialize or reset available tracks for the session
+function initializeSessionTracks() {
+    availableTracksForSession = [...filteredTracks]; // Start with all currently filtered tracks
+    // Shuffle the array to ensure randomness when drawing songs
+    for (let i = availableTracksForSession.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [availableTracksForSession[i], availableTracksForSession[j]] = [availableTracksForSession[j], availableTracksForSession[i]];
+    }
+}
+
+// MODIFIED: getRandomTrack now pulls from availableTracksForSession
 function getRandomTrack() {
-  if (filteredTracks.length === 0) return null;
-  const index = Math.floor(Math.random() * filteredTracks.length);
-  return filteredTracks[index];
+  if (availableTracksForSession.length === 0) {
+    // If all songs have been played, re-enable all filtered songs
+    initializeSessionTracks();
+    // Provide a message to the user that the song pool has been reset
+    document.getElementById('result').textContent = 'All songs played! Shuffling and starting a new cycle.';
+    // You might want a small delay here or a visual indicator for the user
+  }
+  const index = Math.floor(Math.random() * availableTracksForSession.length);
+  const track = availableTracksForSession[index];
+  // Remove the chosen track from the available pool for this session
+  availableTracksForSession.splice(index, 1);
+  return track;
 }
 
 function loadRandomTrack() {
   const track = getRandomTrack();
   if (!track) {
-    document.getElementById('result').textContent = 'No tracks found!';
+    document.getElementById('result').textContent = 'No tracks found for the current selection or the pool is empty!';
     return;
   }
 
@@ -243,8 +270,10 @@ function loadRandomTrack() {
     document.getElementById('result').textContent = 'Oops, no good vibes this time. Try again!';
   });
 
-  document.getElementById('result').textContent = '';
-  document.getElementById('result').className = 'neutral';
+  // Clear previous result and set to neutral
+  const resultEl = document.getElementById('result');
+  resultEl.textContent = '';
+  resultEl.className = 'neutral';
   document.getElementById('yearGuess').value = '';
 
   if (timedMode) startTimer();
@@ -253,6 +282,10 @@ function loadRandomTrack() {
 function toggleTimedMode(btn) {
   timedMode = !timedMode;
   btn.classList.toggle('active', timedMode);
+  if (!timedMode) {
+      clearInterval(timer);
+      document.getElementById('timerBar').style.display = 'none';
+  }
 }
 
 function startTimer() {
@@ -274,8 +307,12 @@ function startTimer() {
   }, 1000);
 }
 
+// MODIFIED: filterByDecade now also re-initializes session tracks
 function filterByDecade(decadePrefix) {
   filteredTracks = !decadePrefix ? [...allTracks] : allTracks.filter(t => t.year.startsWith(decadePrefix));
+  initializeSessionTracks(); // Reset available tracks based on new filter
+  // It's good practice to also load a new track immediately after filtering
+  loadRandomTrack();
 }
 
 function revealAnswer() {
@@ -285,7 +322,10 @@ function revealAnswer() {
   document.getElementById('timerBar').style.display = 'none';
 
   let guess = document.getElementById('yearGuess').value.trim();
-  if (/^\d{2}$/.test(guess)) guess = (parseInt(guess, 10) >= 30 ? '19' : '20') + guess;
+  if (/^\d{2}$/.test(guess)) {
+      // Heuristic for 2-digit year: assume 19xx for >= 30, 20xx for < 30
+      guess = (parseInt(guess, 10) >= 30 ? '19' : '20') + guess;
+  }
 
   const correctYear = currentTrack.year || 'Unknown';
   const showDate = currentTrack.date || 'Unknown';
@@ -327,6 +367,9 @@ function copyShareLink() {
   const link = window.location.href;
   navigator.clipboard.writeText(link).then(() => {
     alert('Link copied to clipboard!');
+  }).catch(err => {
+    console.error('Failed to copy: ', err);
+    alert('Could not copy link. Please copy manually: ' + link);
   });
 }
 </script>
@@ -338,3 +381,4 @@ function copyShareLink() {
 </footer>
 </body>
 </html>
+```
