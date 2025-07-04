@@ -1,340 +1,405 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Guess the Dead Year</title>
-  <link href="https://fonts.googleapis.com/css2?family=Comic+Neue&display=swap" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Comic Neue', cursive;
-      text-align: center;
-      padding: 2em;
-      background: url('https://cdn.mos.cms.futurecdn.net/HuGGeENt6kGyixe3hT9tnY.jpg');
-      background-color: #111;
-      color: #eee;
-      margin: 0;
-    }
-    .card {
-      background: rgba(0, 0, 0, 0.8);
-      padding: 2em;
-      border-radius: 1em;
-      box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
-      max-width: 600px;
-      margin: auto;
-      width: 90%;
-    }
-    audio {
-      width: 100%;
-      margin: 1em 0;
-      border: none;
-    }
-    button {
-      padding: 0.6em 1.2em;
-      font-size: 1.2em;
-      color: white;
-      border: none;
-      border-radius: 0.5em;
-      margin-top: 1em;
-      cursor: pointer;
-      font-family: 'Comic Neue', cursive;
-      font-weight: bold;
-    }
-    .generate {
-      background-color: #28a745;
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      font-size: 1.2em;
-      animation: pulse 1.5s infinite;
-    }
-    .reveal {
-      background-color: #0066cc;
-    }
-    .timed {
-      background-color: #9933cc;
-      font-size: 1em;
-      padding: 0.4em 1em;
-      opacity: 0.6;
-    }
-    .timed.active {
-      opacity: 1;
-    }
-    .donate {
-      display: inline-block;
-      margin-top: 2em;
-      background-color: #d63384;
-      color: yellow;
-      text-decoration: none;
-      font-weight: bold;
-      font-size: 1em;
-      padding: 0.5em 1.5em;
-      border-radius: 0.5em;
-      font-family: 'Comic Neue', cursive;
-    }
-    .share {
-      display: inline-block;
-      margin-top: 1em;
-      background-color: #4444aa;
-      color: white;
-      text-decoration: none;
-      font-weight: bold;
-      font-size: 0.9em;
-      padding: 0.4em 1em;
-      border-radius: 0.5em;
-      font-family: 'Comic Neue', cursive;
-    }
-    input {
-      font-size: 1em;
-      padding: 0.5em;
-      border-radius: 0.3em;
-      border: 1px solid #ccc;
-      margin-top: 1em;
-      background-color: white;
-      color: black;
-      text-align: center;
-      font-weight: bold;
-      width: 6em;
-      font-family: 'Comic Neue', cursive;
-    }
-    #result {
-      margin-top: 1em;
-      font-weight: bold;
-      font-size: 1.5em;
-      white-space: pre-line;
-      min-height: 3em;
-    }
-    .correct {
-      color: #00ff88;
-      animation: glow 1.5s ease-out;
-    }
-    .incorrect {
-      color: #ff4444;
-    }
-    .neutral {
-      color: yellow;
-    }
-    #score {
-      margin-top: 1em;
-      font-size: 1.2em;
-      color: #fff;
-      background-color: rgba(255,255,255,0.1);
-      border: 1px solid #eee;
-      padding: 1em;
-      border-radius: 1em;
-    }
-    #thankYou {
-      margin-top: 0.5em;
-      color: white;
-      font-style: italic;
-    }
-    #timerBar {
-      width: 100%;
-      height: 10px;
-      background: linear-gradient(to right, #00ff88, #ff0000);
-      transition: width 1s linear;
-      margin-top: 1em;
-      border-radius: 1em;
-      display: none;
-    }
-    @keyframes glow {
-      0% { text-shadow: 0 0 5px #00ff88; }
-      50% { text-shadow: 0 0 20px #00ff88; }
-      100% { text-shadow: 0 0 5px #00ff88; }
-    }
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
-      70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
-    }
-    select {
-      margin-top: 1em;
-      padding: 0.4em;
-      font-size: 1em;
-      font-family: 'Comic Neue', cursive;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grateful Dead Taper's Guessing Game</title>
+    <style>
+        body {
+            font-family: 'Georgia', serif;
+            background-color: #333;
+            color: #eee;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+            background-image: url('images/background.jpg'); /* Ensure this path is correct */
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        .container {
+            background-color: rgba(0, 0, 0, 0.8); /* Semi-transparent black for readability */
+            padding: 30px 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.6); /* Green glow effect */
+            text-align: center;
+            max-width: 800px;
+            width: 90%;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #00ff00; /* Bright green for title */
+            margin-bottom: 20px;
+            text-shadow: 0 0 5px #00ff00;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        button {
+            background-color: #00cc00;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        button:hover {
+            background-color: #009900;
+            transform: scale(1.05);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button.active {
+            background-color: #006600; /* Darker green when active (for timed mode) */
+            box-shadow: inset 0 0 10px rgba(0, 255, 0, 0.8);
+        }
+
+        #audio {
+            width: 100%;
+            margin-bottom: 20px;
+            background-color: #222;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        .guess-section {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        label {
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+
+        input[type="text"] {
+            padding: 10px;
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+            background-color: #222;
+            color: #eee;
+            font-size: 1.1em;
+            text-align: center;
+            width: 150px;
+        }
+
+        #result {
+            margin-top: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+            white-space: pre-wrap; /* Allows newlines from JS to show */
+        }
+
+        .correct {
+            color: #00ff00;
+            text-shadow: 0 0 5px #00ff00;
+        }
+
+        .incorrect {
+            color: #ff3333;
+            text-shadow: 0 0 5px #ff3333;
+        }
+
+        .neutral {
+            color: #eee;
+        }
+
+        #score {
+            margin-top: 20px;
+            font-size: 1.1em;
+            color: #bbb;
+        }
+
+        .timer-bar-container {
+            width: 100%;
+            height: 10px;
+            background-color: #555;
+            border-radius: 5px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+
+        #timerBar {
+            height: 100%;
+            width: 100%;
+            background-color: #ffcc00; /* Yellow for timer */
+            transition: width 1s linear;
+            display: none; /* Hidden by default */
+        }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 0.9em;
+            color: #aaa;
+        }
+
+        .donate-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 8px;
+            border: 1px solid #00ff00;
+        }
+
+        .donate-section p {
+            margin: 0;
+            margin-bottom: 10px;
+        }
+
+        .donate-section a {
+            color: #00cc00;
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.3s ease;
+        }
+
+        .donate-section a:hover {
+            color: #00ff00;
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
-  <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-      <span style="font-size: 2.2em; color: #228B22;">⚡💀</span>
-      <h1 style="font-size: 2.4em; color: yellow; margin: 0; font-weight: 900;">Guess the Dead Year</h1>
-      <span style="font-size: 2.2em; color: #228B22;">💀⚡</span>
+    <div class="container">
+        <h1>Grateful Dead Taper's Guessing Game (1965-1995)</h1>
+
+        <div class="controls">
+            <button onclick="loadRandomTrack()">Go</button>
+            <button onclick="revealAnswer()">Check Answer</button>
+            <button id="timedModeBtn" onclick="toggleTimedMode(this)">Timed Mode (20s)</button>
+        </div>
+
+        <audio id="audio" controls preload="auto">
+            Your browser does not support the audio element.
+        </audio>
+
+        <div class="timer-bar-container">
+            <div id="timerBar"></div>
+        </div>
+
+        <div class="controls">
+            <button onclick="filterByDecade('')">All Years</button>
+            <button onclick="filterByDecade('196')">60s</button>
+            <button onclick="filterByDecade('197')">70s</button>
+            <button onclick="filterByDecade('198')">80s</button>
+            <button onclick="filterByDecade('199')">90s</button>
+        </div>
+
+        <div class="guess-section">
+            <label for="yearGuess">Guess the Year:</label>
+            <input type="text" id="yearGuess" placeholder="e.g., 1977 or 77" maxlength="4">
+        </div>
+
+        <div id="result" class="neutral"></div>
+        <div id="score">Score: 0/0 | High Score: 0 | Streak: 0</div>
+
+        <div class="donate-section">
+            <p>If you're enjoying the game, consider a donation to Betty Cantor-Jackson, a legendary taper who preserved countless Grateful Dead shows!</p>
+            <a href="https://www.gofundme.com/f/friends-of-betty-cantorjackson" target="_blank">Donate to Betty</a>
+            <p style="margin-top: 10px;">Want to thank the tapers directly? Find a show you love and thank them for their work!</p>
+            <a href="https://archive.org/details/GratefulDead" target="_blank">Thank a Taper on Archive.org</a>
+        </div>
     </div>
-    <p style="font-style: italic; margin-top: 0.5em; font-size: 0.9em;">1965–1995</p>
 
-    <br />
-    <audio id="audio" controls></audio>
-    <br />
+    <div class="footer">
+        Built with Love by Matt - 7/25
+        <br>
+        <button onclick="copyShareLink()" style="margin-top: 10px;">Share This Game</button>
+    </div>
 
-    <button class="generate" onclick="loadRandomTrack()">Go</button>
-    <br />
+    <script>
+        let currentTrack = null;
+        let totalAttempts = 0;
+        let correctAttempts = 0;
+        let streak = 0;
+        let siteHighScore = parseInt(localStorage.getItem('gd_site_highscore')) || 0;
+        let allTracks = [];
+        let filteredTracks = [];
+        let availableTracksForSession = []; // NEW: Tracks available for the current session
+        let timedMode = false;
+        let timer = null;
+        let timeLeft = 20;
+        let answerRevealed = false;
 
-    <input type="text" id="yearGuess" placeholder="Year" maxlength="4" autocomplete="off" />
-    <br />
+        async function loadTracksJson() {
+            try {
+                const res = await fetch('tracks.json');
+                allTracks = await res.json();
+                filteredTracks = [...allTracks]; // Initialize filteredTracks with all songs
+                initializeSessionTracks(); // NEW: Initialize session tracks on load
+                document.getElementById('result').textContent = '';
+            } catch {
+                document.getElementById('result').textContent = 'Could not load tracks. Please refresh!';
+            }
+        }
+        loadTracksJson();
 
-    <button class="reveal" onclick="revealAnswer()">Check Answer</button>
-    <br />
-    <button class="timed" onclick="toggleTimedMode(this)">Timed Mode</button>
+        // NEW: Function to initialize or reset available tracks for the session
+        function initializeSessionTracks() {
+            availableTracksForSession = [...filteredTracks]; // Start with all currently filtered tracks
+            // Shuffle the array to ensure randomness when drawing songs
+            for (let i = availableTracksForSession.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [availableTracksForSession[i], availableTracksForSession[j]] = [availableTracksForSession[j], availableTracksForSession[i]];
+            }
+            // If you want to automatically load a new track after filter/reset, uncomment this:
+            // loadRandomTrack();
+        }
 
-    <div id="timerBar"></div>
+        // MODIFIED: getRandomTrack now pulls from availableTracksForSession
+        function getRandomTrack() {
+            if (availableTracksForSession.length === 0) {
+                // If all songs have been played, re-enable all filtered songs
+                initializeSessionTracks();
+                // Provide a message to the user that the song pool has been reset
+                document.getElementById('result').textContent = 'All songs played! Shuffling and starting a new cycle.';
+                // You might want a small delay here or a visual indicator for the user
+            }
+            const index = Math.floor(Math.random() * availableTracksForSession.length);
+            const track = availableTracksForSession[index];
+            // Remove the chosen track from the available pool for this session
+            availableTracksForSession.splice(index, 1);
+            return track;
+        }
 
-    <select id="decadeSelect" onchange="filterByDecade(this.value)">
-      <option value="">All Decades</option>
-      <option value="196">1960s</option>
-      <option value="197">1970s</option>
-      <option value="198">1980s</option>
-      <option value="199">1990s</option>
-    </select>
+        // MODIFIED: filterByDecade now also re-initializes session tracks
+        function filterByDecade(decadePrefix) {
+            filteredTracks = !decadePrefix ? [...allTracks] : allTracks.filter(t => t.year.startsWith(decadePrefix));
+            initializeSessionTracks(); // Reset available tracks based on new filter
+            // It's good practice to also load a new track immediately after filtering
+            loadRandomTrack();
+        }
 
-    <p id="result" class="neutral"></p>
-    <p id="score">Score: 0/0 | High Score: 0 | Streak: 0</p>
+        function loadRandomTrack() {
+            const track = getRandomTrack();
+            if (!track) {
+                document.getElementById('result').textContent = 'No tracks found for the current selection or the pool is empty!';
+                return;
+            }
 
-    <a href="https://www.gofundme.com/f/our-friend-betty-cantorjackson-could-use-our-help" target="_blank" class="donate">🌸 Donate to Betty</a>
-    <br />
-    <a class="share" href="#" onclick="copyShareLink()">🔗 Share This With a Friend</a>
-    <p id="thankYou">Thank a Taper</p>
-  </div>
+            currentTrack = track;
+            answerRevealed = false;
+            document.getElementById('audio').src = `audio/${track.filename}`;
+            document.getElementById('audio').load();
+            document.getElementById('audio').play().catch(() => {
+                document.getElementById('result').textContent = 'Oops, no good vibes this time. Try again!';
+            });
 
-<script>
-let currentTrack = null;
-let totalAttempts = 0;
-let correctAttempts = 0;
-let streak = 0;
-let siteHighScore = parseInt(localStorage.getItem('gd_site_highscore')) || 0;
-let allTracks = [];
-let filteredTracks = [];
-let timedMode = false;
-let timer = null;
-let timeLeft = 20;
-let answerRevealed = false;
+            // Clear previous result and set to neutral
+            const resultEl = document.getElementById('result');
+            resultEl.textContent = '';
+            resultEl.className = 'neutral';
+            document.getElementById('yearGuess').value = '';
 
-async function loadTracksJson() {
-  try {
-    const res = await fetch('tracks.json');
-    allTracks = await res.json();
-    filteredTracks = [...allTracks];
-    document.getElementById('result').textContent = '';
-  } catch {
-    document.getElementById('result').textContent = 'Could not load tracks. Please refresh!';
-  }
-}
-loadTracksJson();
+            if (timedMode) startTimer();
+        }
 
-function getRandomTrack() {
-  if (filteredTracks.length === 0) return null;
-  const index = Math.floor(Math.random() * filteredTracks.length);
-  return filteredTracks[index];
-}
+        function toggleTimedMode(btn) {
+            timedMode = !timedMode;
+            btn.classList.toggle('active', timedMode);
+            if (!timedMode) {
+                clearInterval(timer);
+                document.getElementById('timerBar').style.display = 'none';
+            }
+        }
 
-function loadRandomTrack() {
-  const track = getRandomTrack();
-  if (!track) {
-    document.getElementById('result').textContent = 'No tracks found!';
-    return;
-  }
+        function startTimer() {
+            clearInterval(timer);
+            timeLeft = 20;
+            const bar = document.getElementById('timerBar');
+            bar.style.display = 'block';
+            bar.style.width = '100%';
 
-  currentTrack = track;
-  answerRevealed = false;
-  document.getElementById('audio').src = `audio/${track.filename}`;
-  document.getElementById('audio').load();
-  document.getElementById('audio').play().catch(() => {
-    document.getElementById('result').textContent = 'Oops, no good vibes this time. Try again!';
-  });
+            timer = setInterval(() => {
+                timeLeft--;
+                bar.style.width = `${(timeLeft / 20) * 100}%`;
 
-  document.getElementById('result').textContent = '';
-  document.getElementById('result').className = 'neutral';
-  document.getElementById('yearGuess').value = '';
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    revealAnswer();
+                    bar.style.display = 'none';
+                }
+            }, 1000);
+        }
 
-  if (timedMode) startTimer();
-}
+        function revealAnswer() {
+            if (!currentTrack || answerRevealed) return;
+            answerRevealed = true;
+            clearInterval(timer);
+            document.getElementById('timerBar').style.display = 'none';
 
-function toggleTimedMode(btn) {
-  timedMode = !timedMode;
-  btn.classList.toggle('active', timedMode);
-}
+            let guess = document.getElementById('yearGuess').value.trim();
+            if (/^\d{2}$/.test(guess)) {
+                // Heuristic for 2-digit year: assume 19xx for >= 30, 20xx for < 30
+                guess = (parseInt(guess, 10) >= 30 ? '19' : '20') + guess;
+            }
 
-function startTimer() {
-  clearInterval(timer);
-  timeLeft = 20;
-  const bar = document.getElementById('timerBar');
-  bar.style.display = 'block';
-  bar.style.width = '100%';
+            const correctYear = currentTrack.year || 'Unknown';
+            const showDate = currentTrack.date || 'Unknown';
+            const venue = currentTrack.venue || '';
+            const location = currentTrack.location || '';
+            const fullPlace = venue && location ? `${venue}, ${location}` : venue || location || '';
 
-  timer = setInterval(() => {
-    timeLeft--;
-    bar.style.width = `${(timeLeft / 20) * 100}%`;
+            totalAttempts++;
+            let correct = false;
+            let message = '';
 
-    if (timeLeft <= 0) {
-      clearInterval(timer);
-      revealAnswer();
-      bar.style.display = 'none';
-    }
-  }, 1000);
-}
+            if (guess === correctYear) {
+                correctAttempts++;
+                streak++;
+                correct = true;
+                message = 'Correct!';
+            } else {
+                streak = 0;
+                message = 'Not Quite!';
+            }
 
-function filterByDecade(decadePrefix) {
-  filteredTracks = !decadePrefix ? [...allTracks] : allTracks.filter(t => t.year.startsWith(decadePrefix));
-}
+            if (correctAttempts > siteHighScore) {
+                siteHighScore = correctAttempts;
+                localStorage.setItem('gd_site_highscore', siteHighScore);
+            }
 
-function revealAnswer() {
-  if (!currentTrack || answerRevealed) return;
-  answerRevealed = true;
-  clearInterval(timer);
-  document.getElementById('timerBar').style.display = 'none';
+            const resultEl = document.getElementById('result');
+            resultEl.className = correct ? 'correct' : 'incorrect';
+            resultEl.textContent = `${message}\nYou guessed: ${guess} — Correct Year: ${correctYear}\n\nSong: ${currentTrack.track}\nDate: ${showDate}${fullPlace ? `\n${fullPlace}` : ''}`;
+            updateScore();
+        }
 
-  let guess = document.getElementById('yearGuess').value.trim();
-  if (/^\d{2}$/.test(guess)) guess = (parseInt(guess, 10) >= 30 ? '19' : '20') + guess;
+        function updateScore() {
+            const scoreEl = document.getElementById('score');
+            scoreEl.textContent = `Score: ${correctAttempts}/${totalAttempts} | High Score: ${siteHighScore} | Streak: ${streak}`;
+        }
 
-  const correctYear = currentTrack.year || 'Unknown';
-  const showDate = currentTrack.date || 'Unknown';
-  const venue = currentTrack.venue || '';
-  const location = currentTrack.location || '';
-  const fullPlace = venue && location ? `${venue}, ${location}` : venue || location || '';
-
-  totalAttempts++;
-  let correct = false;
-  let message = '';
-
-  if (guess === correctYear) {
-    correctAttempts++;
-    streak++;
-    correct = true;
-    message = 'Correct!';
-  } else {
-    streak = 0;
-    message = 'Not Quite!';
-  }
-
-  if (correctAttempts > siteHighScore) {
-    siteHighScore = correctAttempts;
-    localStorage.setItem('gd_site_highscore', siteHighScore);
-  }
-
-  const resultEl = document.getElementById('result');
-  resultEl.className = correct ? 'correct' : 'incorrect';
-  resultEl.textContent = `${message}\nYou guessed: ${guess} — Correct Year: ${correctYear}\n\nSong: ${currentTrack.track}\nDate: ${showDate}${fullPlace ? `\n${fullPlace}` : ''}`;
-  updateScore();
-}
-
-function updateScore() {
-  const scoreEl = document.getElementById('score');
-  scoreEl.textContent = `Score: ${correctAttempts}/${totalAttempts} | High Score: ${siteHighScore} | Streak: ${streak}`;
-}
-
-function copyShareLink() {
-  const link = window.location.href;
-  navigator.clipboard.writeText(link).then(() => {
-    alert('Link copied to clipboard!');
-  });
-}
-</script>
-
-<footer style="font-size: 0.8em; text-align: center; margin-top: 2em; color: #ccc;">
-  <a href="https://github.com/Gignac77" target="_blank" rel="noopener noreferrer" style="color: #ccc; text-decoration: none;">
-    Built with Love by Matt - 7/25
-  </a>
-</footer>
+        function copyShareLink() {
+            const link = window.location.href;
+            navigator.clipboard.writeText(link).then(() => {
+                alert('Link copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                alert('Could not copy link. Please copy manually: ' + link);
+            });
+        }
+    </script>
 </body>
 </html>
