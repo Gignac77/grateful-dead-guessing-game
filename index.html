@@ -31,13 +31,16 @@
       align-items: center;
       width: 100%;
     }
-    /* REVISED: Responsive font size for the main title */
     .header-container h1 {
-        font-size: clamp(2.4em, 10vw, 3.8em); /* Min, Preferred, Max font size */
+        font-size: clamp(2.4em, 10vw, 3.8em);
         color: yellow;
         margin: 0;
         font-weight: 900;
         flex-grow: 1;
+    }
+    /* Bolding the title */
+    .header-container h1 strong {
+        font-weight: bold;
     }
     .header-container span {
         font-size: 2.2em;
@@ -184,7 +187,7 @@
         font-weight: bold;
     }
     #dailySummaryModal {
-        display: none; /* Hidden by default */
+        display: none;
         position: fixed;
         z-index: 100;
         left: 0;
@@ -231,7 +234,7 @@
   <div class="card">
     <div class="header-container">
       <span>⚡💀</span>
-      <h1>DeadGuessr</h1>
+      <h1><strong>DeadGuessr</strong></h1>
       <span>💀⚡</span>
     </div>
     <p style="font-style: italic; margin-top: 0.5em; font-size: 0.9em;">1965–1995</p>
@@ -240,7 +243,7 @@
     <audio id="audio" controls></audio>
     <br />
 
-    <button id="goButton" class="generate" onclick="loadRandomTrack()">Go</button>
+    <button id="goButton" class="generate" onclick="loadTrack()">Go</button>
     <br />
 
     <input type="text" id="yearGuess" placeholder="Year" maxlength="4" autocomplete="off" />
@@ -289,23 +292,23 @@ let streak = 0;
 let siteHighScore = parseInt(localStorage.getItem('gd_site_highscore')) || 0;
 let allTracks = [];
 let filteredTracks = [];
-let availableTracksForSession = [];
+let availableTracksForSession = []; // For free play
 let timedMode = false;
 let timer = null;
 let timeLeft = 20;
 let answerRevealed = false;
 
+// --- NEW LOGIC FOR DAILY ROTATION ---
 const MAX_DAILY_GUESSES = 5;
 let dailyGuesses = 0;
 let dailyResults = [];
+let todaysDailySongs = []; // Holds the 5 fixed songs for the day
 let inFreePlayMode = false;
 
-// --- CORE GAME INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', async () => {
-    // This function sets up the game mode (Daily or Free Play) on launch.
-    checkDailyStatus();
-    await loadTracksJson();
-    // Provide initial instruction based on the game mode.
+    await loadTracksJson(); // Load all tracks first
+    checkDailyStatus(); // Determine game mode and today's 5 songs
+    
     if (!inFreePlayMode) {
         document.getElementById('result').textContent = 'Press "Go" to start your Daily Challenge!';
     } else {
@@ -314,29 +317,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function getTodayString() {
-    return new Date().toLocaleDateString('en-US');
+    // Use UTC date to ensure everyone gets the same songs on the same day
+    return new Date().toISOString().split('T')[0];
 }
 
 /**
- * Checks localStorage to determine if the user is on a new day
- * or has already completed the daily challenge.
- * This is the core logic that makes the Daily Challenge the default.
+ * Manages the daily song queue and user progress.
  */
 function checkDailyStatus() {
     const lastPlayDate = localStorage.getItem('gd_lastPlayDate');
     const today = getTodayString();
 
+    // This function now also sets the `todaysDailySongs` array
+    setDailySongs(); 
+
     if (lastPlayDate === today) {
-        // User has already played today. Load their progress.
+        // User has played today, load their progress
         dailyGuesses = parseInt(localStorage.getItem('gd_dailyGuesses')) || 0;
         dailyResults = JSON.parse(localStorage.getItem('gd_dailyResults')) || [];
-        // If they finished their 5 guesses, put them in Free Play mode.
         if (dailyGuesses >= MAX_DAILY_GUESSES) {
             inFreePlayMode = true;
         }
     } else {
-        // It's a new day (or first time playing).
-        // Reset daily progress to start the Daily Challenge.
+        // New day, reset user's daily progress
         localStorage.setItem('gd_lastPlayDate', today);
         localStorage.setItem('gd_dailyGuesses', '0');
         localStorage.setItem('gd_dailyResults', '[]');
@@ -344,13 +347,46 @@ function checkDailyStatus() {
         dailyResults = [];
         inFreePlayMode = false;
     }
-    // Update the UI text to reflect the current mode.
     updateGameModeUI();
 }
 
 /**
- * Updates the text that shows the current game mode.
+ * Creates and manages the persistent, shuffled master playlist for daily challenges.
  */
+function setDailySongs() {
+    let queue = JSON.parse(localStorage.getItem('gd_dailySongQueue'));
+    let index = parseInt(localStorage.getItem('gd_dailyQueueIndex')) || 0;
+
+    // If queue doesn't exist or is empty, create it
+    if (!queue || queue.length === 0) {
+        queue = [...allTracks];
+        // Shuffle using Fisher-Yates algorithm
+        for (let i = queue.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [queue[i], queue[j]] = [queue[j], queue[i]];
+        }
+        localStorage.setItem('gd_dailySongQueue', JSON.stringify(queue));
+        index = 0; // Start from the beginning
+    }
+
+    // If index is out of bounds, reset and re-shuffle
+    if (index >= queue.length) {
+        index = 0;
+        // Optional: Re-shuffle here if you want a new order each cycle
+        localStorage.setItem('gd_dailySongQueue', JSON.stringify(queue.sort(() => Math.random() - 0.5)));
+    }
+
+    todaysDailySongs = queue.slice(index, index + MAX_DAILY_GUESSES);
+
+    // This part should only advance the index ONCE per day.
+    // We check if the last advance date is today.
+    const lastAdvanceDate = localStorage.getItem('gd_lastQueueAdvanceDate');
+    if(lastAdvanceDate !== getTodayString()) {
+        localStorage.setItem('gd_dailyQueueIndex', (index + MAX_DAILY_GUESSES).toString());
+        localStorage.setItem('gd_lastQueueAdvanceDate', getTodayString());
+    }
+}
+
 function updateGameModeUI() {
     const indicator = document.getElementById('gameModeIndicator');
     if (inFreePlayMode) {
@@ -365,52 +401,56 @@ async function loadTracksJson() {
   try {
     const res = await fetch('tracks.json');
     allTracks = await res.json();
-    filteredTracks = [...allTracks];
-    initializeSessionTracks();
+    // Initialize free play tracks immediately
+    availableTracksForSession = [...allTracks];
   } catch {
     document.getElementById('result').textContent = 'Could not load tracks. Please refresh!';
   }
 }
 
-function initializeSessionTracks() {
-    availableTracksForSession = [...filteredTracks];
-    // Simple shuffle
-    for (let i = availableTracksForSession.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [availableTracksForSession[i], availableTracksForSession[j]] = [availableTracksForSession[j], availableTracksForSession[i]];
+/**
+ * A single function to load the correct track based on game mode.
+ */
+function loadTrack() {
+    let track;
+    if (!inFreePlayMode) {
+        // Daily Challenge: Load the next song from the fixed daily list
+        if (dailyGuesses < MAX_DAILY_GUESSES) {
+            track = todaysDailySongs[dailyGuesses];
+        } else {
+            // Should not happen, but as a fallback...
+            inFreePlayMode = true;
+            updateGameModeUI();
+            alert("Daily challenge finished! Entering Free Play.");
+            return;
+        }
+    } else {
+        // Free Play: Load a random track
+        if (availableTracksForSession.length === 0) {
+            availableTracksForSession = [...allTracks]; // Re-populate
+            alert("You've played all the songs! Starting a new random cycle.");
+        }
+        const randIndex = Math.floor(Math.random() * availableTracksForSession.length);
+        track = availableTracksForSession[randIndex];
+        availableTracksForSession.splice(randIndex, 1); // Remove to avoid repeats in session
     }
-}
 
-function getRandomTrack() {
-  if (availableTracksForSession.length === 0) {
-    initializeSessionTracks();
-    document.getElementById('result').textContent = 'All songs played! Shuffling and starting a new cycle.';
-  }
-  const index = Math.floor(Math.random() * availableTracksForSession.length);
-  const track = availableTracksForSession[index];
-  availableTracksForSession.splice(index, 1);
-  return track;
-}
+    if (!track) {
+        document.getElementById('result').textContent = 'No more tracks available for today!';
+        return;
+    }
+    
+    currentTrack = track;
+    answerRevealed = false;
+    document.getElementById('audio').src = `audio/${track.filename}`;
+    document.getElementById('audio').load();
+    document.getElementById('audio').play().catch(() => {});
+    document.getElementById('result').textContent = '';
+    document.getElementById('result').className = 'neutral';
+    document.getElementById('yearGuess').value = '';
+    document.getElementById('checkButton').disabled = false;
 
-function loadRandomTrack() {
-  const track = getRandomTrack();
-  if (!track) {
-    document.getElementById('result').textContent = 'No tracks found for the current selection!';
-    return;
-  }
-  currentTrack = track;
-  answerRevealed = false;
-  document.getElementById('audio').src = `audio/${track.filename}`;
-  document.getElementById('audio').load();
-  document.getElementById('audio').play().catch(() => {
-    document.getElementById('result').textContent = 'Oops, no good vibes this time. Try again!';
-  });
-  document.getElementById('result').textContent = '';
-  document.getElementById('result').className = 'neutral';
-  document.getElementById('yearGuess').value = '';
-  document.getElementById('checkButton').disabled = false;
-
-  if (timedMode) startTimer();
+    if (timedMode) startTimer();
 }
 
 function revealAnswer() {
@@ -436,20 +476,19 @@ function revealAnswer() {
       streak = 0;
   }
 
-  // If we are in the Daily Challenge, track the guess
   if (!inFreePlayMode) {
-      dailyGuesses++;
       dailyResults.push({
           correct: correct,
           guess: guess,
           trackInfo: `${currentTrack.track} (${correctYear})`
       });
+      // Important: We only increment dailyGuesses AFTER revealing the answer for the current track.
+      dailyGuesses++;
       localStorage.setItem('gd_dailyGuesses', dailyGuesses.toString());
       localStorage.setItem('gd_dailyResults', JSON.stringify(dailyResults));
 
-      // Check if the Daily Challenge is now complete
       if (dailyGuesses >= MAX_DAILY_GUESSES) {
-          showDailySummary(); // Show the popup
+          showDailySummary();
       }
   }
 
@@ -466,45 +505,33 @@ function revealAnswer() {
   updateGameModeUI();
 }
 
-/**
- * Displays the results modal after 5 daily guesses.
- */
 function showDailySummary() {
     const modal = document.getElementById('dailySummaryModal');
     document.getElementById('summaryDate').textContent = `(${getTodayString()})`;
     const graphicEl = document.getElementById('summaryGraphic');
     const detailsEl = document.getElementById('summaryDetails');
     
-    let graphic = '';
-    let details = '';
-    let dailyCorrect = 0;
-
-    dailyResults.forEach((result, index) => {
-        graphic += result.correct ? '🟩' : '🟥';
-        if (index < dailyResults.length - 1) graphic += ' ';
-        details += `${result.correct ? '✅' : '❌'} Guess ${index + 1}: You guessed ${result.guess || 'none'} for ${result.trackInfo}\n`;
-        if (result.correct) dailyCorrect++;
-    });
+    let graphic = dailyResults.map(r => r.correct ? '🟩' : '🟥').join(' ');
+    let details = dailyResults.map((result, index) => 
+        `${result.correct ? '✅' : '❌'} Guess ${index + 1}: You guessed ${result.guess || 'none'} for ${result.trackInfo}`
+    ).join('\n');
+    let dailyCorrect = dailyResults.filter(r => r.correct).length;
 
     graphicEl.textContent = graphic;
     detailsEl.innerHTML = `<strong>Your Score Today: ${dailyCorrect}/${MAX_DAILY_GUESSES}</strong>\n\n${details}`;
     modal.style.display = 'block';
 }
 
-/**
- * Closes the summary modal and transitions the game to Free Play mode.
- */
 function closeSummaryModal() {
     document.getElementById('dailySummaryModal').style.display = 'none';
-    inFreePlayMode = true; // Officially enter Free Play
-    updateGameModeUI(); // Update the UI text
-    document.getElementById('result').textContent = 'Welcome to Free Play! Guess as many as you like.';
+    inFreePlayMode = true;
+    updateGameModeUI();
+    document.getElementById('result').textContent = 'Welcome to Free Play! Press "Go" for a random song.';
 }
 
 function copyShareLink(event, isFromResultModal) {
   event.preventDefault();
-  let shareText = '';
-
+  let shareText;
   if (isFromResultModal && dailyResults.length > 0) {
       const graphic = dailyResults.map(r => r.correct ? '🟩' : '🟥').join('');
       const dailyCorrect = dailyResults.filter(r => r.correct).length;
@@ -515,10 +542,7 @@ function copyShareLink(event, isFromResultModal) {
 
   navigator.clipboard.writeText(shareText).then(() => {
     alert('Results copied to clipboard!');
-  }).catch(err => {
-    console.error('Failed to copy: ', err);
-    alert('Could not copy link.');
-  });
+  }).catch(err => console.error('Failed to copy: ', err));
 }
 
 function updateScore() {
@@ -553,24 +577,23 @@ function startTimer() {
 }
 
 function filterByDecade(decadePrefix) {
-  filteredTracks = !decadePrefix ? [...allTracks] : allTracks.filter(t => t.year.startsWith(decadePrefix));
-  initializeSessionTracks();
-  loadRandomTrack();
+  // In free play, this can filter the available random tracks
+  availableTracksForSession = !decadePrefix ? [...allTracks] : allTracks.filter(t => t.year.startsWith(decadePrefix));
+  document.getElementById('decadeSelect').value = decadePrefix;
+  alert('Decade filter applied for Free Play mode.');
 }
 
 document.addEventListener('keydown', function(event) {
     if (document.activeElement === document.getElementById('yearGuess') && event.key === 'Enter') {
         event.preventDefault();
-        if (!answerRevealed) {
-            revealAnswer();
-        }
+        if (!answerRevealed) revealAnswer();
     }
 });
 </script>
 
 <footer style="font-size: 0.8em; text-align: center; margin-top: 2em; color: #ccc;">
   <a href="https://github.com/Gignac77" target="_blank" rel="noopener noreferrer" style="color: #ccc; text-decoration: none;">
-    Built with Love by Matt - 7/25
+    Built with Love by Matt
   </a>
 </footer>
 </body>
