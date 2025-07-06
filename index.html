@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Guess the Dead Year</title>
+  <title>DeadGuessr</title>
   <link href="https://fonts.googleapis.com/css2?family=Comic+Neue&display=swap" rel="stylesheet">
   <style>
     body {
@@ -159,11 +159,12 @@
       font-size: 1em;
       font-family: 'Comic Neue', cursive;
     }
-    /* --- NEW STYLES FOR DAILY LIMIT & RESULTS --- */
-    #dailyGuessCounter {
+    /* --- REVISED STYLES FOR DAILY LIMIT & RESULTS --- */
+    #gameModeIndicator {
         font-size: 1.1em;
         margin-top: 1em;
         color: #ffc107;
+        font-weight: bold;
     }
     #dailySummaryModal {
         display: none; /* Hidden by default */
@@ -175,6 +176,7 @@
         height: 100%;
         overflow: auto;
         background-color: rgba(0,0,0,0.7);
+        backdrop-filter: blur(5px);
     }
     .modal-content {
         background-color: #1a1a1a;
@@ -198,9 +200,13 @@
         max-height: 200px;
         overflow-y: auto;
         padding-right: 10px;
+        margin-bottom: 1.5em;
     }
-    .modal-share-button {
+    .modal-button {
         background-color: #17a2b8;
+    }
+    .modal-button.continue {
+        background-color: #28a745;
     }
   </style>
 </head>
@@ -208,7 +214,7 @@
   <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
       <span style="font-size: 2.2em; color: #228B22;">⚡💀</span>
-      <h1 style="font-size: 2.4em; color: yellow; margin: 0; font-weight: 900;">Guess the Dead Year</h1>
+      <h1 style="font-size: 2.4em; color: yellow; margin: 0; font-weight: 900;">DeadGuessr</h1>
       <span style="font-size: 2.2em; color: #228B22;">💀⚡</span>
     </div>
     <p style="font-style: italic; margin-top: 0.5em; font-size: 0.9em;">1965–1995</p>
@@ -229,7 +235,7 @@
 
     <div id="timerBar"></div>
     
-    <div id="dailyGuessCounter"></div> <select id="decadeSelect" onchange="filterByDecade(this.value)">
+    <div id="gameModeIndicator"></div> <select id="decadeSelect" onchange="filterByDecade(this.value)">
       <option value="">All Decades</option>
       <option value="196">1960s</option>
       <option value="197">1970s</option>
@@ -248,11 +254,11 @@
 
   <div id="dailySummaryModal">
     <div class="modal-content">
-      <h2>Daily Results</h2>
+      <h2>Daily Results <span id="summaryDate" style="color: #ffc107;"></span></h2>
       <div id="summaryGraphic"></div>
       <div id="summaryDetails"></div>
-      <button class="modal-share-button" onclick="copyShareLink(event, true)">Share Your Results</button>
-      <p style="margin-top: 1em; font-size: 0.9em;">Come back tomorrow for a new set of songs!</p>
+      <button class="modal-button" onclick="copyShareLink(event, true)">Share Your Results</button>
+      <button class="modal-button continue" onclick="closeSummaryModal()">Continue to Free Play</button>
     </div>
   </div>
 
@@ -270,17 +276,18 @@ let timer = null;
 let timeLeft = 20;
 let answerRevealed = false;
 
-// --- NEW VARIABLES FOR DAILY LIMIT ---
+// --- REVISED VARIABLES FOR GAME MODES ---
 const MAX_DAILY_GUESSES = 5;
 let dailyGuesses = 0;
-let dailyResults = []; // Stores the results of each guess for the summary
+let dailyResults = []; // Stores the results of the 5 daily guesses
+let inFreePlayMode = false;
 
 // --- CORE GAME LOGIC ---
 document.addEventListener('DOMContentLoaded', async () => {
     checkDailyStatus();
     await loadTracksJson();
-    if (dailyGuesses < MAX_DAILY_GUESSES) {
-        document.getElementById('result').textContent = 'Press "Go" to start!';
+    if (!inFreePlayMode) {
+        document.getElementById('result').textContent = 'Press "Go" to start your daily challenge!';
     }
 });
 
@@ -295,27 +302,28 @@ function checkDailyStatus() {
     if (lastPlayDate === today) {
         dailyGuesses = parseInt(localStorage.getItem('gd_dailyGuesses')) || 0;
         dailyResults = JSON.parse(localStorage.getItem('gd_dailyResults')) || [];
+        if (dailyGuesses >= MAX_DAILY_GUESSES) {
+            inFreePlayMode = true;
+        }
     } else {
-        // It's a new day, reset everything
+        // New day, reset daily progress
         localStorage.setItem('gd_lastPlayDate', today);
         localStorage.setItem('gd_dailyGuesses', '0');
         localStorage.setItem('gd_dailyResults', '[]');
         dailyGuesses = 0;
         dailyResults = [];
+        inFreePlayMode = false;
     }
-    updateDailyUI();
+    updateGameModeUI();
 }
 
-function updateDailyUI() {
-    const guessesLeft = MAX_DAILY_GUESSES - dailyGuesses;
-    document.getElementById('dailyGuessCounter').textContent = `Guesses Remaining: ${guessesLeft}/${MAX_DAILY_GUESSES}`;
-
-    if (guessesLeft <= 0) {
-        document.getElementById('goButton').disabled = true;
-        document.getElementById('checkButton').disabled = true;
-        document.getElementById('yearGuess').disabled = true;
-        document.getElementById('result').textContent = 'You\'ve used all your guesses for today. Come back tomorrow!';
-        showDailySummary();
+function updateGameModeUI() {
+    const indicator = document.getElementById('gameModeIndicator');
+    if (inFreePlayMode) {
+        indicator.textContent = 'Mode: Free Play';
+    } else {
+        const guessesLeft = MAX_DAILY_GUESSES - dailyGuesses;
+        indicator.textContent = `Daily Challenge: ${guessesLeft}/${MAX_DAILY_GUESSES} Guesses`;
     }
 }
 
@@ -350,10 +358,6 @@ function getRandomTrack() {
 }
 
 function loadRandomTrack() {
-  if (dailyGuesses >= MAX_DAILY_GUESSES) {
-      updateDailyUI();
-      return;
-  }
   const track = getRandomTrack();
   if (!track) {
     document.getElementById('result').textContent = 'No tracks found for the current selection!';
@@ -388,46 +392,50 @@ function revealAnswer() {
   }
 
   const correctYear = currentTrack.year;
+  const correct = (guess === correctYear);
+
   totalAttempts++;
-  dailyGuesses++;
-  
-  let correct = (guess === correctYear);
-  let message = '';
-  
   if (correct) {
-    correctAttempts++;
-    streak++;
-    message = 'Correct!';
+      correctAttempts++;
+      streak++;
   } else {
-    streak = 0;
-    message = 'Not Quite!';
+      streak = 0;
   }
-  
+
+  // --- REVISED: Logic for daily vs free play ---
+  if (!inFreePlayMode) {
+      dailyGuesses++;
+      dailyResults.push({
+          correct: correct,
+          guess: guess,
+          trackInfo: `${currentTrack.track} (${correctYear})`
+      });
+      localStorage.setItem('gd_dailyGuesses', dailyGuesses.toString());
+      localStorage.setItem('gd_dailyResults', JSON.stringify(dailyResults));
+
+      if (dailyGuesses >= MAX_DAILY_GUESSES) {
+          inFreePlayMode = true; // Transition to free play
+          showDailySummary();
+      }
+  }
+
   if (correctAttempts > siteHighScore) {
     siteHighScore = correctAttempts;
     localStorage.setItem('gd_site_highscore', siteHighScore);
   }
-  
-  // Store result for daily summary
-  dailyResults.push({
-      correct: correct,
-      guess: guess,
-      trackInfo: `${currentTrack.track} (${correctYear})`
-  });
-  localStorage.setItem('gd_dailyGuesses', dailyGuesses.toString());
-  localStorage.setItem('gd_dailyResults', JSON.stringify(dailyResults));
 
   const resultEl = document.getElementById('result');
   resultEl.className = correct ? 'correct' : 'incorrect';
-  resultEl.textContent = `${message}\nYou guessed: ${guess} — Correct Year: ${correctYear}\n\nSong: ${currentTrack.track}\nDate: ${currentTrack.date}\n${currentTrack.venue}, ${currentTrack.location}`;
+  resultEl.textContent = `${correct ? 'Correct!' : 'Not Quite!'}\nYou guessed: ${guess} — Correct Year: ${correctYear}\n\nSong: ${currentTrack.track}\nDate: ${currentTrack.date}\n${currentTrack.venue}, ${currentTrack.location}`;
   
   updateScore();
-  updateDailyUI();
+  updateGameModeUI();
 }
 
-// --- NEW: Daily Summary Functions ---
+// --- REVISED: Daily Summary Functions ---
 function showDailySummary() {
     const modal = document.getElementById('dailySummaryModal');
+    document.getElementById('summaryDate').textContent = `(${getTodayString()})`;
     const graphicEl = document.getElementById('summaryGraphic');
     const detailsEl = document.getElementById('summaryDetails');
     
@@ -437,15 +445,19 @@ function showDailySummary() {
 
     dailyResults.forEach((result, index) => {
         graphic += result.correct ? '🟩' : '🟥';
-        if (index < dailyResults.length -1) graphic += ' '; // space between emojis
-        
-        details += `${result.correct ? '✅' : '❌'} Guess ${index + 1}: You guessed ${result.guess} for ${result.trackInfo}\n`;
+        if (index < dailyResults.length - 1) graphic += ' ';
+        details += `${result.correct ? '✅' : '❌'} Guess ${index + 1}: You guessed ${result.guess || 'none'} for ${result.trackInfo}\n`;
         if (result.correct) dailyCorrect++;
     });
 
     graphicEl.textContent = graphic;
     detailsEl.innerHTML = `<strong>Your Score Today: ${dailyCorrect}/${MAX_DAILY_GUESSES}</strong>\n\n${details}`;
     modal.style.display = 'block';
+}
+
+function closeSummaryModal() {
+    document.getElementById('dailySummaryModal').style.display = 'none';
+    document.getElementById('result').textContent = 'Welcome to Free Play! Guess as many as you like.';
 }
 
 function copyShareLink(event, isFromResultModal) {
@@ -455,24 +467,23 @@ function copyShareLink(event, isFromResultModal) {
   if (isFromResultModal && dailyResults.length > 0) {
       const graphic = dailyResults.map(r => r.correct ? '🟩' : '🟥').join('');
       const dailyCorrect = dailyResults.filter(r => r.correct).length;
-      shareText = `Guess the Dead Year ${getTodayString()}\nMy Score: ${dailyCorrect}/${MAX_DAILY_GUESSES}\n${graphic}\n\nPlay here: ${window.location.href}`;
+      shareText = `DeadGuessr ${getTodayString()}\nMy Score: ${dailyCorrect}/${MAX_DAILY_GUESSES}\n${graphic}\n\nPlay here: ${window.location.href}`;
   } else {
-      shareText = `Check out this "Guess the Dead Year" game! \n\n${window.location.href}`;
+      shareText = `Check out this "DeadGuessr" game! \n\n${window.location.href}`;
   }
 
   navigator.clipboard.writeText(shareText).then(() => {
-    alert('Link and results copied to clipboard!');
+    alert('Results copied to clipboard!');
   }).catch(err => {
     console.error('Failed to copy: ', err);
     alert('Could not copy link.');
   });
 }
 
-// --- UTILITY AND OTHER FUNCTIONS (some modified) ---
-
+// --- UTILITY AND OTHER FUNCTIONS ---
 function updateScore() {
   const scoreEl = document.getElementById('score');
-  scoreEl.textContent = `Score: ${correctAttempts}/${totalAttempts} | High Score: ${siteHighScore} | Streak: ${streak}`;
+  scoreEl.textContent = `Session Score: ${correctAttempts}/${totalAttempts} | High Score: ${siteHighScore} | Streak: ${streak}`;
 }
 
 function toggleTimedMode(btn) {
