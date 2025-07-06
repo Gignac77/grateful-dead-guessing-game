@@ -25,6 +25,24 @@
       width: 90%;
       position: relative;
     }
+    .header-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    }
+    /* REVISED: Responsive font size for the main title */
+    .header-container h1 {
+        font-size: clamp(2.4em, 10vw, 3.8em); /* Min, Preferred, Max font size */
+        color: yellow;
+        margin: 0;
+        font-weight: 900;
+        flex-grow: 1;
+    }
+    .header-container span {
+        font-size: 2.2em;
+        color: #228B22;
+    }
     audio {
       width: 100%;
       margin: 1em 0;
@@ -159,7 +177,6 @@
       font-size: 1em;
       font-family: 'Comic Neue', cursive;
     }
-    /* --- REVISED STYLES FOR DAILY LIMIT & RESULTS --- */
     #gameModeIndicator {
         font-size: 1.1em;
         margin-top: 1em;
@@ -212,10 +229,10 @@
 </head>
 <body>
   <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-      <span style="font-size: 2.2em; color: #228B22;">⚡💀</span>
-      <h1 style="font-size: 2.4em; color: yellow; margin: 0; font-weight: 900;">DeadGuessr</h1>
-      <span style="font-size: 2.2em; color: #228B22;">💀⚡</span>
+    <div class="header-container">
+      <span>⚡💀</span>
+      <h1>DeadGuessr</h1>
+      <span>💀⚡</span>
     </div>
     <p style="font-style: italic; margin-top: 0.5em; font-size: 0.9em;">1965–1995</p>
 
@@ -235,7 +252,9 @@
 
     <div id="timerBar"></div>
     
-    <div id="gameModeIndicator"></div> <select id="decadeSelect" onchange="filterByDecade(this.value)">
+    <div id="gameModeIndicator"></div>
+
+    <select id="decadeSelect" onchange="filterByDecade(this.value)">
       <option value="">All Decades</option>
       <option value="196">1960s</option>
       <option value="197">1970s</option>
@@ -244,7 +263,7 @@
     </select>
 
     <p id="result" class="neutral"></p>
-    <p id="score">Score: 0/0 | High Score: 0 | Streak: 0</p>
+    <p id="score">Session Score: 0/0 | High Score: 0 | Streak: 0</p>
 
     <a href="https://www.gofundme.com/f/our-friend-betty-cantorjackson-could-use-our-help" target="_blank" class="donate">🌸 Donate to Betty</a>
     <br />
@@ -276,18 +295,21 @@ let timer = null;
 let timeLeft = 20;
 let answerRevealed = false;
 
-// --- REVISED VARIABLES FOR GAME MODES ---
 const MAX_DAILY_GUESSES = 5;
 let dailyGuesses = 0;
-let dailyResults = []; // Stores the results of the 5 daily guesses
+let dailyResults = [];
 let inFreePlayMode = false;
 
-// --- CORE GAME LOGIC ---
+// --- CORE GAME INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', async () => {
+    // This function sets up the game mode (Daily or Free Play) on launch.
     checkDailyStatus();
     await loadTracksJson();
+    // Provide initial instruction based on the game mode.
     if (!inFreePlayMode) {
-        document.getElementById('result').textContent = 'Press "Go" to start your daily challenge!';
+        document.getElementById('result').textContent = 'Press "Go" to start your Daily Challenge!';
+    } else {
+        document.getElementById('result').textContent = 'Daily Challenge complete! Welcome to Free Play.';
     }
 });
 
@@ -295,18 +317,26 @@ function getTodayString() {
     return new Date().toLocaleDateString('en-US');
 }
 
+/**
+ * Checks localStorage to determine if the user is on a new day
+ * or has already completed the daily challenge.
+ * This is the core logic that makes the Daily Challenge the default.
+ */
 function checkDailyStatus() {
     const lastPlayDate = localStorage.getItem('gd_lastPlayDate');
     const today = getTodayString();
 
     if (lastPlayDate === today) {
+        // User has already played today. Load their progress.
         dailyGuesses = parseInt(localStorage.getItem('gd_dailyGuesses')) || 0;
         dailyResults = JSON.parse(localStorage.getItem('gd_dailyResults')) || [];
+        // If they finished their 5 guesses, put them in Free Play mode.
         if (dailyGuesses >= MAX_DAILY_GUESSES) {
             inFreePlayMode = true;
         }
     } else {
-        // New day, reset daily progress
+        // It's a new day (or first time playing).
+        // Reset daily progress to start the Daily Challenge.
         localStorage.setItem('gd_lastPlayDate', today);
         localStorage.setItem('gd_dailyGuesses', '0');
         localStorage.setItem('gd_dailyResults', '[]');
@@ -314,16 +344,20 @@ function checkDailyStatus() {
         dailyResults = [];
         inFreePlayMode = false;
     }
+    // Update the UI text to reflect the current mode.
     updateGameModeUI();
 }
 
+/**
+ * Updates the text that shows the current game mode.
+ */
 function updateGameModeUI() {
     const indicator = document.getElementById('gameModeIndicator');
     if (inFreePlayMode) {
         indicator.textContent = 'Mode: Free Play';
     } else {
         const guessesLeft = MAX_DAILY_GUESSES - dailyGuesses;
-        indicator.textContent = `Daily Challenge: ${guessesLeft}/${MAX_DAILY_GUESSES} Guesses`;
+        indicator.textContent = `Daily Challenge: ${guessesLeft}/${MAX_DAILY_GUESSES} Guesses Left`;
     }
 }
 
@@ -340,6 +374,7 @@ async function loadTracksJson() {
 
 function initializeSessionTracks() {
     availableTracksForSession = [...filteredTracks];
+    // Simple shuffle
     for (let i = availableTracksForSession.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [availableTracksForSession[i], availableTracksForSession[j]] = [availableTracksForSession[j], availableTracksForSession[i]];
@@ -370,9 +405,8 @@ function loadRandomTrack() {
   document.getElementById('audio').play().catch(() => {
     document.getElementById('result').textContent = 'Oops, no good vibes this time. Try again!';
   });
-  const resultEl = document.getElementById('result');
-  resultEl.textContent = '';
-  resultEl.className = 'neutral';
+  document.getElementById('result').textContent = '';
+  document.getElementById('result').className = 'neutral';
   document.getElementById('yearGuess').value = '';
   document.getElementById('checkButton').disabled = false;
 
@@ -402,7 +436,7 @@ function revealAnswer() {
       streak = 0;
   }
 
-  // --- REVISED: Logic for daily vs free play ---
+  // If we are in the Daily Challenge, track the guess
   if (!inFreePlayMode) {
       dailyGuesses++;
       dailyResults.push({
@@ -413,9 +447,9 @@ function revealAnswer() {
       localStorage.setItem('gd_dailyGuesses', dailyGuesses.toString());
       localStorage.setItem('gd_dailyResults', JSON.stringify(dailyResults));
 
+      // Check if the Daily Challenge is now complete
       if (dailyGuesses >= MAX_DAILY_GUESSES) {
-          inFreePlayMode = true; // Transition to free play
-          showDailySummary();
+          showDailySummary(); // Show the popup
       }
   }
 
@@ -432,7 +466,9 @@ function revealAnswer() {
   updateGameModeUI();
 }
 
-// --- REVISED: Daily Summary Functions ---
+/**
+ * Displays the results modal after 5 daily guesses.
+ */
 function showDailySummary() {
     const modal = document.getElementById('dailySummaryModal');
     document.getElementById('summaryDate').textContent = `(${getTodayString()})`;
@@ -455,8 +491,13 @@ function showDailySummary() {
     modal.style.display = 'block';
 }
 
+/**
+ * Closes the summary modal and transitions the game to Free Play mode.
+ */
 function closeSummaryModal() {
     document.getElementById('dailySummaryModal').style.display = 'none';
+    inFreePlayMode = true; // Officially enter Free Play
+    updateGameModeUI(); // Update the UI text
     document.getElementById('result').textContent = 'Welcome to Free Play! Guess as many as you like.';
 }
 
@@ -480,10 +521,8 @@ function copyShareLink(event, isFromResultModal) {
   });
 }
 
-// --- UTILITY AND OTHER FUNCTIONS ---
 function updateScore() {
-  const scoreEl = document.getElementById('score');
-  scoreEl.textContent = `Session Score: ${correctAttempts}/${totalAttempts} | High Score: ${siteHighScore} | Streak: ${streak}`;
+  document.getElementById('score').textContent = `Session Score: ${correctAttempts}/${totalAttempts} | High Score: ${siteHighScore} | Streak: ${streak}`;
 }
 
 function toggleTimedMode(btn) {
@@ -507,7 +546,7 @@ function startTimer() {
     bar.style.width = `${(timeLeft / 20) * 100}%`;
     if (timeLeft <= 0) {
       clearInterval(timer);
-      revealAnswer();
+      if(!answerRevealed) revealAnswer();
       bar.style.display = 'none';
     }
   }, 1000);
