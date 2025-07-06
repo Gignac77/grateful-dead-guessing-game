@@ -16,13 +16,14 @@
       margin: 0;
     }
     .card {
-      background: rgba(0, 0, 0, 0.8);
+      background: rgba(0, 0, 0, 0.85);
       padding: 2em;
       border-radius: 1em;
       box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
       max-width: 600px;
       margin: auto;
       width: 90%;
+      position: relative;
     }
     audio {
       width: 100%;
@@ -39,6 +40,11 @@
       cursor: pointer;
       font-family: 'Comic Neue', cursive;
       font-weight: bold;
+      transition: background-color 0.3s, opacity 0.3s;
+    }
+    button:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
     }
     .generate {
       background-color: #28a745;
@@ -153,6 +159,49 @@
       font-size: 1em;
       font-family: 'Comic Neue', cursive;
     }
+    /* --- NEW STYLES FOR DAILY LIMIT & RESULTS --- */
+    #dailyGuessCounter {
+        font-size: 1.1em;
+        margin-top: 1em;
+        color: #ffc107;
+    }
+    #dailySummaryModal {
+        display: none; /* Hidden by default */
+        position: fixed;
+        z-index: 100;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.7);
+    }
+    .modal-content {
+        background-color: #1a1a1a;
+        margin: 10% auto;
+        padding: 25px;
+        border: 1px solid #888;
+        width: 90%;
+        max-width: 500px;
+        border-radius: 1em;
+        text-align: center;
+        color: #fff;
+    }
+    #summaryGraphic {
+        font-size: 2em;
+        letter-spacing: 0.2em;
+        margin: 1em 0;
+    }
+    #summaryDetails {
+        text-align: left;
+        white-space: pre-wrap;
+        max-height: 200px;
+        overflow-y: auto;
+        padding-right: 10px;
+    }
+    .modal-share-button {
+        background-color: #17a2b8;
+    }
   </style>
 </head>
 <body>
@@ -168,19 +217,19 @@
     <audio id="audio" controls></audio>
     <br />
 
-    <button class="generate" onclick="loadRandomTrack()">Go</button>
+    <button id="goButton" class="generate" onclick="loadRandomTrack()">Go</button>
     <br />
 
     <input type="text" id="yearGuess" placeholder="Year" maxlength="4" autocomplete="off" />
     <br />
 
-    <button class="reveal" onclick="revealAnswer()">Check Answer</button>
+    <button id="checkButton" class="reveal" onclick="revealAnswer()">Check Answer</button>
     <br />
     <button class="timed" onclick="toggleTimedMode(this)">Timed Mode</button>
 
     <div id="timerBar"></div>
-
-    <select id="decadeSelect" onchange="filterByDecade(this.value)">
+    
+    <div id="dailyGuessCounter"></div> <select id="decadeSelect" onchange="filterByDecade(this.value)">
       <option value="">All Decades</option>
       <option value="196">1960s</option>
       <option value="197">1970s</option>
@@ -193,8 +242,18 @@
 
     <a href="https://www.gofundme.com/f/our-friend-betty-cantorjackson-could-use-our-help" target="_blank" class="donate">🌸 Donate to Betty</a>
     <br />
-    <a class="share" href="#" onclick="copyShareLink()">🔗 Share This With a Friend</a>
+    <a class="share" href="#" onclick="copyShareLink(event, false)">🔗 Share This Game</a>
     <p id="thankYou">Thank a Taper</p>
+  </div>
+
+  <div id="dailySummaryModal">
+    <div class="modal-content">
+      <h2>Daily Results</h2>
+      <div id="summaryGraphic"></div>
+      <div id="summaryDetails"></div>
+      <button class="modal-share-button" onclick="copyShareLink(event, true)">Share Your Results</button>
+      <p style="margin-top: 1em; font-size: 0.9em;">Come back tomorrow for a new set of songs!</p>
+    </div>
   </div>
 
 <script>
@@ -205,58 +264,101 @@ let streak = 0;
 let siteHighScore = parseInt(localStorage.getItem('gd_site_highscore')) || 0;
 let allTracks = [];
 let filteredTracks = [];
-let availableTracksForSession = []; // Tracks available for the current session
+let availableTracksForSession = [];
 let timedMode = false;
 let timer = null;
 let timeLeft = 20;
 let answerRevealed = false;
 
+// --- NEW VARIABLES FOR DAILY LIMIT ---
+const MAX_DAILY_GUESSES = 5;
+let dailyGuesses = 0;
+let dailyResults = []; // Stores the results of each guess for the summary
+
+// --- CORE GAME LOGIC ---
+document.addEventListener('DOMContentLoaded', async () => {
+    checkDailyStatus();
+    await loadTracksJson();
+    if (dailyGuesses < MAX_DAILY_GUESSES) {
+        document.getElementById('result').textContent = 'Press "Go" to start!';
+    }
+});
+
+function getTodayString() {
+    return new Date().toLocaleDateString('en-US');
+}
+
+function checkDailyStatus() {
+    const lastPlayDate = localStorage.getItem('gd_lastPlayDate');
+    const today = getTodayString();
+
+    if (lastPlayDate === today) {
+        dailyGuesses = parseInt(localStorage.getItem('gd_dailyGuesses')) || 0;
+        dailyResults = JSON.parse(localStorage.getItem('gd_dailyResults')) || [];
+    } else {
+        // It's a new day, reset everything
+        localStorage.setItem('gd_lastPlayDate', today);
+        localStorage.setItem('gd_dailyGuesses', '0');
+        localStorage.setItem('gd_dailyResults', '[]');
+        dailyGuesses = 0;
+        dailyResults = [];
+    }
+    updateDailyUI();
+}
+
+function updateDailyUI() {
+    const guessesLeft = MAX_DAILY_GUESSES - dailyGuesses;
+    document.getElementById('dailyGuessCounter').textContent = `Guesses Remaining: ${guessesLeft}/${MAX_DAILY_GUESSES}`;
+
+    if (guessesLeft <= 0) {
+        document.getElementById('goButton').disabled = true;
+        document.getElementById('checkButton').disabled = true;
+        document.getElementById('yearGuess').disabled = true;
+        document.getElementById('result').textContent = 'You\'ve used all your guesses for today. Come back tomorrow!';
+        showDailySummary();
+    }
+}
+
 async function loadTracksJson() {
   try {
     const res = await fetch('tracks.json');
     allTracks = await res.json();
-    filteredTracks = [...allTracks]; // Initialize filteredTracks with all songs
-    initializeSessionTracks(); // Initialize session tracks on load
-    document.getElementById('result').textContent = '';
+    filteredTracks = [...allTracks];
+    initializeSessionTracks();
   } catch {
     document.getElementById('result').textContent = 'Could not load tracks. Please refresh!';
   }
 }
-loadTracksJson();
 
-// Function to initialize or reset available tracks for the session
 function initializeSessionTracks() {
-    availableTracksForSession = [...filteredTracks]; // Start with all currently filtered tracks
-    // Shuffle the array to ensure randomness when drawing songs
+    availableTracksForSession = [...filteredTracks];
     for (let i = availableTracksForSession.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [availableTracksForSession[i], availableTracksForSession[j]] = [availableTracksForSession[j], availableTracksForSession[i]];
     }
 }
 
-// getRandomTrack now pulls from availableTracksForSession
 function getRandomTrack() {
   if (availableTracksForSession.length === 0) {
-    // If all songs have been played, re-enable all filtered songs
     initializeSessionTracks();
-    // Provide a message to the user that the song pool has been reset
     document.getElementById('result').textContent = 'All songs played! Shuffling and starting a new cycle.';
-    // You might want a small delay here or a visual indicator for the user
   }
   const index = Math.floor(Math.random() * availableTracksForSession.length);
   const track = availableTracksForSession[index];
-  // Remove the chosen track from the available pool for this session
   availableTracksForSession.splice(index, 1);
   return track;
 }
 
 function loadRandomTrack() {
+  if (dailyGuesses >= MAX_DAILY_GUESSES) {
+      updateDailyUI();
+      return;
+  }
   const track = getRandomTrack();
   if (!track) {
-    document.getElementById('result').textContent = 'No tracks found for the current selection or the pool is empty!';
+    document.getElementById('result').textContent = 'No tracks found for the current selection!';
     return;
   }
-
   currentTrack = track;
   answerRevealed = false;
   document.getElementById('audio').src = `audio/${track.filename}`;
@@ -264,22 +366,121 @@ function loadRandomTrack() {
   document.getElementById('audio').play().catch(() => {
     document.getElementById('result').textContent = 'Oops, no good vibes this time. Try again!';
   });
-
-  // Clear previous result and set to neutral
   const resultEl = document.getElementById('result');
   resultEl.textContent = '';
   resultEl.className = 'neutral';
   document.getElementById('yearGuess').value = '';
+  document.getElementById('checkButton').disabled = false;
 
   if (timedMode) startTimer();
+}
+
+function revealAnswer() {
+  if (!currentTrack || answerRevealed) return;
+  answerRevealed = true;
+  clearInterval(timer);
+  document.getElementById('timerBar').style.display = 'none';
+  document.getElementById('checkButton').disabled = true;
+
+  let guess = document.getElementById('yearGuess').value.trim();
+  if (/^\d{2}$/.test(guess)) {
+      guess = (parseInt(guess, 10) >= 65 ? '19' : '20') + guess;
+  }
+
+  const correctYear = currentTrack.year;
+  totalAttempts++;
+  dailyGuesses++;
+  
+  let correct = (guess === correctYear);
+  let message = '';
+  
+  if (correct) {
+    correctAttempts++;
+    streak++;
+    message = 'Correct!';
+  } else {
+    streak = 0;
+    message = 'Not Quite!';
+  }
+  
+  if (correctAttempts > siteHighScore) {
+    siteHighScore = correctAttempts;
+    localStorage.setItem('gd_site_highscore', siteHighScore);
+  }
+  
+  // Store result for daily summary
+  dailyResults.push({
+      correct: correct,
+      guess: guess,
+      trackInfo: `${currentTrack.track} (${correctYear})`
+  });
+  localStorage.setItem('gd_dailyGuesses', dailyGuesses.toString());
+  localStorage.setItem('gd_dailyResults', JSON.stringify(dailyResults));
+
+  const resultEl = document.getElementById('result');
+  resultEl.className = correct ? 'correct' : 'incorrect';
+  resultEl.textContent = `${message}\nYou guessed: ${guess} — Correct Year: ${correctYear}\n\nSong: ${currentTrack.track}\nDate: ${currentTrack.date}\n${currentTrack.venue}, ${currentTrack.location}`;
+  
+  updateScore();
+  updateDailyUI();
+}
+
+// --- NEW: Daily Summary Functions ---
+function showDailySummary() {
+    const modal = document.getElementById('dailySummaryModal');
+    const graphicEl = document.getElementById('summaryGraphic');
+    const detailsEl = document.getElementById('summaryDetails');
+    
+    let graphic = '';
+    let details = '';
+    let dailyCorrect = 0;
+
+    dailyResults.forEach((result, index) => {
+        graphic += result.correct ? '🟩' : '🟥';
+        if (index < dailyResults.length -1) graphic += ' '; // space between emojis
+        
+        details += `${result.correct ? '✅' : '❌'} Guess ${index + 1}: You guessed ${result.guess} for ${result.trackInfo}\n`;
+        if (result.correct) dailyCorrect++;
+    });
+
+    graphicEl.textContent = graphic;
+    detailsEl.innerHTML = `<strong>Your Score Today: ${dailyCorrect}/${MAX_DAILY_GUESSES}</strong>\n\n${details}`;
+    modal.style.display = 'block';
+}
+
+function copyShareLink(event, isFromResultModal) {
+  event.preventDefault();
+  let shareText = '';
+
+  if (isFromResultModal && dailyResults.length > 0) {
+      const graphic = dailyResults.map(r => r.correct ? '🟩' : '🟥').join('');
+      const dailyCorrect = dailyResults.filter(r => r.correct).length;
+      shareText = `Guess the Dead Year ${getTodayString()}\nMy Score: ${dailyCorrect}/${MAX_DAILY_GUESSES}\n${graphic}\n\nPlay here: ${window.location.href}`;
+  } else {
+      shareText = `Check out this "Guess the Dead Year" game! \n\n${window.location.href}`;
+  }
+
+  navigator.clipboard.writeText(shareText).then(() => {
+    alert('Link and results copied to clipboard!');
+  }).catch(err => {
+    console.error('Failed to copy: ', err);
+    alert('Could not copy link.');
+  });
+}
+
+// --- UTILITY AND OTHER FUNCTIONS (some modified) ---
+
+function updateScore() {
+  const scoreEl = document.getElementById('score');
+  scoreEl.textContent = `Score: ${correctAttempts}/${totalAttempts} | High Score: ${siteHighScore} | Streak: ${streak}`;
 }
 
 function toggleTimedMode(btn) {
   timedMode = !timedMode;
   btn.classList.toggle('active', timedMode);
   if (!timedMode) {
-      clearInterval(timer);
-      document.getElementById('timerBar').style.display = 'none';
+    clearInterval(timer);
+    document.getElementById('timerBar').style.display = 'none';
   }
 }
 
@@ -293,7 +494,6 @@ function startTimer() {
   timer = setInterval(() => {
     timeLeft--;
     bar.style.width = `${(timeLeft / 20) * 100}%`;
-
     if (timeLeft <= 0) {
       clearInterval(timer);
       revealAnswer();
@@ -302,78 +502,18 @@ function startTimer() {
   }, 1000);
 }
 
-// filterByDecade now also re-initializes session tracks
 function filterByDecade(decadePrefix) {
   filteredTracks = !decadePrefix ? [...allTracks] : allTracks.filter(t => t.year.startsWith(decadePrefix));
-  initializeSessionTracks(); // Reset available tracks based on new filter
-  // It's good practice to also load a new track immediately after filtering
+  initializeSessionTracks();
   loadRandomTrack();
 }
 
-function revealAnswer() {
-  if (!currentTrack || answerRevealed) return;
-  answerRevealed = true;
-  clearInterval(timer);
-  document.getElementById('timerBar').style.display = 'none';
-
-  let guess = document.getElementById('yearGuess').value.trim();
-  if (/^\d{2}$/.test(guess)) {
-      // Heuristic for 2-digit year: assume 19xx for >= 30, 20xx for < 30
-      guess = (parseInt(guess, 10) >= 30 ? '19' : '20') + guess;
-  }
-
-  const correctYear = currentTrack.year || 'Unknown';
-  const showDate = currentTrack.date || 'Unknown';
-  const venue = currentTrack.venue || '';
-  const location = currentTrack.location || '';
-  const fullPlace = venue && location ? `${venue}, ${location}` : venue || location || '';
-
-  totalAttempts++;
-  let correct = false;
-  let message = '';
-
-  if (guess === correctYear) {
-    correctAttempts++;
-    streak++;
-    correct = true;
-    message = 'Correct!';
-  } else {
-    streak = 0;
-    message = 'Not Quite!';
-  }
-
-  if (correctAttempts > siteHighScore) {
-    siteHighScore = correctAttempts;
-    localStorage.setItem('gd_site_highscore', siteHighScore);
-  }
-
-  const resultEl = document.getElementById('result');
-  resultEl.className = correct ? 'correct' : 'incorrect';
-  resultEl.textContent = `${message}\nYou guessed: ${guess} — Correct Year: ${correctYear}\n\nSong: ${currentTrack.track}\nDate: ${showDate}${fullPlace ? `\n${fullPlace}` : ''}`;
-  updateScore();
-}
-
-function updateScore() {
-  const scoreEl = document.getElementById('score');
-  scoreEl.textContent = `Score: ${correctAttempts}/${totalAttempts} | High Score: ${siteHighScore} | Streak: ${streak}`;
-}
-
-function copyShareLink() {
-  const link = window.location.href;
-  navigator.clipboard.writeText(link).then(() => {
-    alert('Link copied to clipboard!');
-  }).catch(err => {
-    console.error('Failed to copy: ', err);
-    alert('Could not copy link. Please copy manually: ' + link);
-  });
-}
-
-// NEW: Add event listener for Enter key
 document.addEventListener('keydown', function(event) {
-    // Check if the focused element is the yearGuess input and the key is Enter
     if (document.activeElement === document.getElementById('yearGuess') && event.key === 'Enter') {
-        event.preventDefault(); // Prevent default Enter key behavior (e.g., form submission)
-        revealAnswer(); // Trigger the check answer function
+        event.preventDefault();
+        if (!answerRevealed) {
+            revealAnswer();
+        }
     }
 });
 </script>
