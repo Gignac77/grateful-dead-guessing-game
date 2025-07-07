@@ -38,7 +38,6 @@
         font-weight: 900;
         flex-grow: 1;
     }
-    /* Bolding the title */
     .header-container h1 strong {
         font-weight: bold;
     }
@@ -51,13 +50,14 @@
       margin: 1em 0;
       border: none;
     }
+    /* Button Styles */
     button {
       padding: 0.6em 1.2em;
       font-size: 1.2em;
       color: white;
       border: none;
       border-radius: 0.5em;
-      margin-top: 1em;
+      margin-top: 1em; /* Default margin for most buttons */
       cursor: pointer;
       font-family: 'Comic Neue', cursive;
       font-weight: bold;
@@ -78,6 +78,15 @@
     .reveal {
       background-color: #0066cc;
     }
+    /* Smaller buttons for log/results */
+    .small-button {
+        padding: 0.4em 0.8em;
+        font-size: 1em;
+        margin-top: 0.5em; /* Closer spacing for smaller buttons */
+        display: block; /* Ensure they take full width for centering */
+        margin-left: auto;
+        margin-right: auto;
+    }
     .timed {
       background-color: #9933cc;
       font-size: 1em;
@@ -87,6 +96,18 @@
     .timed.active {
       opacity: 1;
     }
+    /* New: Timed mode options container */
+    .timed-options {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 1em;
+    }
+    .timed-options select {
+        margin-left: 0.5em;
+        margin-top: 0; /* Override default margin-top for select */
+    }
+
     .donate {
       display: inline-block;
       margin-top: 2em;
@@ -174,13 +195,9 @@
       70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
       100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
     }
-    select {
-      margin-top: 1em;
-      padding: 0.4em;
-      font-size: 1em;
-      font-family: 'Comic Neue', cursive;
-      /* Ensure select is centered */
-      display: block; 
+    /* Centering for select and buttons */
+    select, button:not(.generate):not(.donate):not(.share) {
+      display: block; /* Make them block-level to apply auto margins */
       margin-left: auto;
       margin-right: auto;
     }
@@ -189,10 +206,9 @@
         margin-top: 1em;
         color: #ffc107;
         font-weight: bold;
-        /* Hide by default, shown only in daily challenge */
         display: none; 
     }
-    /* Styles for Modals */
+    /* Modal Styles (for Daily Summary) */
     .modal {
         display: none;
         position: fixed;
@@ -215,7 +231,7 @@
         border-radius: 1em;
         text-align: center;
         color: #fff;
-        position: relative; /* For the close button */
+        position: relative;
     }
     .modal-close {
         color: #aaa;
@@ -237,7 +253,7 @@
         letter-spacing: 0.2em;
         margin: 1em 0;
     }
-    #summaryDetails, #sessionLogContent {
+    #summaryDetails {
         text-align: left;
         white-space: pre-wrap;
         max-height: 200px;
@@ -251,6 +267,35 @@
     }
     .modal-button.continue {
         background-color: #28a745;
+    }
+
+    /* Session Log as a dropdown (details/summary) */
+    .session-log-container {
+        background: rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 0.5em;
+        margin-top: 1em;
+        padding: 0.5em 1em;
+        text-align: left;
+        color: #eee;
+        max-width: 90%; /* Match card width behavior */
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .session-log-container summary {
+        font-weight: bold;
+        cursor: pointer;
+        padding: 0.5em 0;
+        outline: none;
+    }
+    .session-log-container summary:hover {
+        color: #ffc107;
+    }
+    .session-log-content {
+        max-height: 250px;
+        overflow-y: auto;
+        padding-right: 10px; /* Space for scrollbar */
+        padding-bottom: 0.5em;
     }
     .session-log-entry {
         border-bottom: 1px dashed rgba(255,255,255,0.2);
@@ -282,13 +327,6 @@
 
     <button id="checkButton" class="reveal" onclick="revealAnswer()">Check Answer</button>
     <br />
-    <button class="timed" onclick="toggleTimedMode(this)">Timed Mode</button>
-    <button id="viewDailyResultsButton" class="reveal" style="display: none; margin-top: 0.5em;" onclick="showDailySummary()">View Daily Results</button>
-    <button id="viewSessionLogButton" class="reveal" style="margin-top: 0.5em;" onclick="showSessionLog()">View Session Log</button>
-
-    <div id="timerBar"></div>
-    
-    <div id="gameModeIndicator"></div>
 
     <select id="decadeSelect" onchange="filterByDecade(this.value)">
       <option value="">All Decades</option>
@@ -297,6 +335,31 @@
       <option value="198">1980s</option>
       <option value="199">1990s</option>
     </select>
+    
+    <div class="timed-options">
+        <button class="timed" onclick="toggleTimedMode(this)">Timed Mode</button>
+        <select id="timedDurationSelect" style="display: none;">
+            <option value="10">10s</option>
+            <option value="20" selected>20s</option>
+            <option value="30">30s</option>
+            <option value="45">45s</option>
+            <option value="60">60s</option>
+        </select>
+    </div>
+
+    <button id="viewDailyResultsButton" class="reveal small-button" style="display: none;" onclick="showDailySummary()">View Daily Results</button>
+    
+    <details id="sessionLogDetails" class="session-log-container" style="display: none;">
+        <summary>View Session Log</summary>
+        <div id="sessionLogContent" class="session-log-content">
+            <p>No guesses made yet this session.</p>
+        </div>
+    </details>
+
+
+    <div id="timerBar"></div>
+    
+    <div id="gameModeIndicator"></div>
 
     <p id="result" class="neutral"></p>
     <p id="score">Session Score: 0/0 | High Score: 0 | Streak: 0</p>
@@ -318,15 +381,6 @@
     </div>
   </div>
 
-  <div id="sessionLogModal" class="modal">
-    <div class="modal-content">
-      <span class="modal-close" onclick="closeSessionLogModal()">&times;</span>
-      <h2>Session Log</h2>
-      <div id="sessionLogContent"></div>
-      <button class="modal-button continue" onclick="closeSessionLogModal()">Close</button>
-    </div>
-  </div>
-
 <script>
 let currentTrack = null;
 let totalAttempts = 0;
@@ -337,9 +391,9 @@ let allTracks = [];
 let availableTracksForSession = []; 
 let timedMode = false;
 let timer = null;
-let timeLeft = 20;
+let timeLeft = 20; // Default timed mode duration
 let answerRevealed = false;
-let sessionGuesses = []; // Stores data for the session log
+let sessionGuesses = []; 
 
 // --- DAILY CHALLENGE GLOBAL VARIABLES ---
 const MAX_DAILY_GUESSES = 5;
@@ -355,7 +409,6 @@ let inFreePlayMode = false;
  */
 function getTodayString() {
     const now = new Date();
-    // Using UTC to ensure everyone globally gets the same date and thus the same daily songs.
     return now.getUTCFullYear() + '-' +
            String(now.getUTCMonth() + 1).padStart(2, '0') + '-' +
            String(now.getUTCDate()).padStart(2, '0');
@@ -365,14 +418,26 @@ function getTodayString() {
  * Returns today's date in a readable format like "July 6th, 2025".
  */
 function getFormattedDate(dateString) {
-    const date = new Date(dateString + 'T12:00:00Z'); // Add T12:00:00Z to ensure it's treated as UTC midday
+    const date = new Date(dateString + 'T12:00:00Z'); 
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
-    return date.toLocaleDateString('en-US', options);
+    
+    // Add ordinal suffix to day
+    const day = date.getDate();
+    let suffix;
+    if (day > 3 && day < 21) suffix = 'th';
+    else {
+        switch (day % 10) {
+            case 1:  suffix = 'st'; break;
+            case 2:  suffix = 'nd'; break;
+            case 3:  suffix = 'rd'; break;
+            default: suffix = 'th';
+        }
+    }
+    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' }).replace(/\d+/, day + suffix) + ', ' + date.getFullYear();
 }
 
 /**
  * Simple pseudo-random number generator for consistent shuffling based on a seed.
- * Source: https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript
  */
 function mulberry32(seed) {
     return function() {
@@ -403,19 +468,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadTracksJson(); 
     checkDailyStatus(); 
     
-    // Set initial message based on game mode
+    // Set initial message and UI state based on game mode
     if (!inFreePlayMode) {
         document.getElementById('result').textContent = 'Press "Go" to start your Daily Challenge!';
         document.getElementById('decadeSelect').style.display = 'none'; 
-        document.getElementById('viewDailyResultsButton').style.display = 'none';
-        document.getElementById('gameModeIndicator').style.display = 'block'; // Show indicator for daily challenge
+        document.getElementById('gameModeIndicator').style.display = 'block'; 
     } else {
         document.getElementById('result').textContent = 'Daily Challenge complete! Welcome to Free Play.';
         document.getElementById('decadeSelect').style.display = 'block'; 
-        document.getElementById('viewDailyResultsButton').style.display = 'block'; // Show button in free play
-        document.getElementById('gameModeIndicator').style.display = 'none'; // Hide indicator in free play
+        document.getElementById('gameModeIndicator').style.display = 'none'; 
+        // Show buttons only if daily challenge was completed
+        document.getElementById('viewDailyResultsButton').style.display = 'block';
+        document.getElementById('sessionLogDetails').style.display = 'block';
     }
     updateScore();
+
+    // Set initial timed duration and listener
+    document.getElementById('timedDurationSelect').value = timeLeft.toString();
+    document.getElementById('timedDurationSelect').addEventListener('change', (event) => {
+        timeLeft = parseInt(event.target.value);
+        if (timedMode && !answerRevealed) { // Restart timer with new duration if active
+            startTimer();
+        }
+    });
 });
 
 async function loadTracksJson() {
@@ -475,27 +550,18 @@ function getTodaysUniversalSongs() {
     const missingTracks = [...currentTrackFilenames].filter(f => !queueFilenames.has(f));
 
     if (globalQueue.length === 0 || globalQueueIndex >= globalQueue.length || missingTracks.length > 0 || lastQueueShuffleDate !== today) {
-        // Condition for reshuffle and index reset:
-        // 1. Global queue is empty (first load).
-        // 2. Global queue index has gone past the end (all songs played).
-        // 3. New tracks have been added to tracks.json (missingTracks > 0).
-        // 4. It's a new day, and we need to advance the index and potentially wrap/reshuffle.
-        
         console.log('Resetting/Updating global song queue due to exhaustion, new tracks, or new day.');
-        globalQueue = [...allTracks]; // Always start with all current tracks
-        globalQueue = seededShuffle(globalQueue, random); // Shuffle with today's seed
+        globalQueue = [...allTracks]; 
+        globalQueue = seededShuffle(globalQueue, random); 
         
-        // If it's a new day, advance the index from yesterday's position
         if (lastQueueShuffleDate !== today) {
             let previousIndex = parseInt(localStorage.getItem('gd_globalQueueIndex')) || 0;
             globalQueueIndex = (previousIndex + MAX_DAILY_GUESSES);
             
-            // If the advanced index goes beyond the new shuffled array, reset to 0
             if (globalQueueIndex >= globalQueue.length) {
                 globalQueueIndex = 0;
             }
         } else {
-            // If it's not a new day, but we're here due to exhaustion or new tracks, reset index to 0
             globalQueueIndex = 0;
         }
 
@@ -504,15 +570,13 @@ function getTodaysUniversalSongs() {
         localStorage.setItem('gd_lastQueueShuffleDate', today); 
     }
     
-    // Select today's 5 songs from the global queue
     const dailySongs = [];
     for (let i = 0; i < MAX_DAILY_GUESSES; i++) {
-        const songIndex = (globalQueueIndex + i) % globalQueue.length; // Use modulo for wrapping within current globalQueue
+        const songIndex = (globalQueueIndex + i) % globalQueue.length; 
         dailySongs.push(globalQueue[songIndex]);
     }
     return dailySongs;
 }
-
 
 /**
  * Removes today's daily challenge songs from the available free play pool.
@@ -526,18 +590,21 @@ function updateGameModeUI() {
     const indicator = document.getElementById('gameModeIndicator');
     const decadeSelect = document.getElementById('decadeSelect');
     const viewDailyResultsBtn = document.getElementById('viewDailyResultsButton');
+    const sessionLogDetails = document.getElementById('sessionLogDetails');
 
     if (inFreePlayMode) {
-        indicator.style.display = 'none'; // Hide indicator
+        indicator.style.display = 'none'; 
         decadeSelect.style.display = 'block'; 
         // Only show "View Daily Results" button if user has completed dailies today
         viewDailyResultsBtn.style.display = (dailyGuesses >= MAX_DAILY_GUESSES) ? 'block' : 'none'; 
+        sessionLogDetails.style.display = 'block'; // Always show session log in free play
     } else {
         const guessesLeft = MAX_DAILY_GUESSES - dailyGuesses;
         indicator.textContent = `Daily Challenge: ${guessesLeft}/${MAX_DAILY_GUESSES} Guesses Left`;
-        indicator.style.display = 'block'; // Show indicator for daily challenge
+        indicator.style.display = 'block'; 
         decadeSelect.style.display = 'none'; 
-        viewDailyResultsBtn.style.display = 'none'; // Hide in daily challenge mode
+        viewDailyResultsBtn.style.display = 'none'; 
+        sessionLogDetails.style.display = 'none'; // Hide in daily challenge mode
     }
 }
 
@@ -547,7 +614,6 @@ function updateGameModeUI() {
 function loadTrack() {
     let track;
     if (!inFreePlayMode) {
-        // Daily Challenge: Load the next song from the fixed daily list
         if (dailyGuesses < MAX_DAILY_GUESSES) {
             track = todaysDailySongs[dailyGuesses];
         } else {
@@ -557,7 +623,6 @@ function loadTrack() {
             return;
         }
     } else {
-        // Free Play: Load a random track from the available session pool
         if (availableTracksForSession.length === 0) {
             availableTracksForSession = [...allTracks]; 
             removeDailySongsFromFreePlayPool(); 
@@ -617,6 +682,7 @@ function revealAnswer() {
         guessedYear: guess,
         isCorrect: correct
     });
+    updateSessionLogDisplay(); // Update live log
 
     if (!inFreePlayMode) {
         dailyResults.push({
@@ -670,12 +736,13 @@ function closeSummaryModal() {
     document.getElementById('result').textContent = 'Welcome to Free Play! Press "Next" for a random song.';
     document.getElementById('goButton').textContent = 'Next';
     removeDailySongsFromFreePlayPool(); 
+    // Show new buttons after daily completion
+    document.getElementById('viewDailyResultsButton').style.display = 'block';
+    document.getElementById('sessionLogDetails').style.display = 'block';
 }
 
-function showSessionLog() {
-    const modal = document.getElementById('sessionLogModal');
+function updateSessionLogDisplay() {
     const logContent = document.getElementById('sessionLogContent');
-    
     if (sessionGuesses.length === 0) {
         logContent.innerHTML = '<p>No guesses made yet this session.</p>';
     } else {
@@ -688,11 +755,6 @@ function showSessionLog() {
             </div>
         `).join('');
     }
-    modal.style.display = 'block';
-}
-
-function closeSessionLogModal() {
-    document.getElementById('sessionLogModal').style.display = 'none';
 }
 
 function copyShareLink(event, isFromResultModal) {
@@ -718,22 +780,28 @@ function updateScore() {
 function toggleTimedMode(btn) {
     timedMode = !timedMode;
     btn.classList.toggle('active', timedMode);
-    if (!timedMode) {
+    const timedDurationSelect = document.getElementById('timedDurationSelect');
+
+    if (timedMode) {
+        timedDurationSelect.style.display = 'inline-block'; // Show dropdown
+        timeLeft = parseInt(timedDurationSelect.value); // Set initial time from dropdown
+        startTimer();
+    } else {
+        timedDurationSelect.style.display = 'none'; // Hide dropdown
         clearInterval(timer);
         document.getElementById('timerBar').style.display = 'none';
     }
 }
 
 function startTimer() {
-    clearInterval(timer);
-    timeLeft = 20;
+    clearInterval(timer); // Clear any existing timer
     const bar = document.getElementById('timerBar');
     bar.style.display = 'block';
     bar.style.width = '100%';
 
     timer = setInterval(() => {
         timeLeft--;
-        bar.style.width = `${(timeLeft / 20) * 100}%`;
+        bar.style.width = `${(timeLeft / parseInt(document.getElementById('timedDurationSelect').value)) * 100}%`; // Calculate width based on selected total time
         if (timeLeft <= 0) {
             clearInterval(timer);
             if(!answerRevealed) revealAnswer();
