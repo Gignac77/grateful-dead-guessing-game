@@ -271,4 +271,832 @@
     }
     #statsDetails table {
         width: 100%;
-        border-collapse:
+        border-collapse: collapse;
+        margin-top: 1em;
+    }
+    #statsDetails th, #statsDetails td {
+        border: 1px solid rgba(255,255,255,0.2);
+        padding: 0.5em;
+        text-align: left;
+    }
+    #statsDetails th {
+        background-color: rgba(255,255,255,0.1);
+    }
+
+    .modal-button {
+        background-color: #17a2b8;
+    }
+    .modal-button.continue {
+        background-color: #28a745;
+    }
+
+    .session-log-container {
+        background: rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 0.5em;
+        margin-top: 1em;
+        padding: 0.5em 1em;
+        text-align: left;
+        color: #eee;
+        max-width: 90%;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .session-log-container summary {
+        font-weight: bold;
+        cursor: pointer;
+        padding: 0.5em 0;
+        outline: none;
+    }
+    .session-log-container summary:hover {
+        color: #ffc107;
+    }
+    .session-log-content {
+        max-height: 250px;
+        overflow-y: auto;
+        padding-right: 10px;
+        padding-bottom: 0.5em;
+    }
+    .session-log-entry {
+        border-bottom: 1px dashed rgba(255,255,255,0.2);
+        padding: 0.5em 0;
+    }
+    .session-log-entry:last-child {
+        border-bottom: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header-container">
+      <span>⚡💀</span>
+      <h1><strong>DeadGuessr</strong></h1>
+      <span>💀⚡</span>
+    </div>
+    <p style="font-style: italic; margin-top: 0.5em; font-size: 0.9em;">1965–1995</p>
+
+    <br />
+    <audio id="audio" controls></audio>
+    <br />
+
+    <button id="goButton" class="generate" onclick="loadTrack()">Go</button>
+    <br />
+
+    <input type="text" id="yearGuess" placeholder="Year" maxlength="4" autocomplete="off" />
+    <br />
+
+    <button id="checkButton" class="reveal" onclick="revealAnswer()">Check Answer</button>
+    <br />
+
+    <select id="decadeSelect" onchange="filterByDecade(this.value)">
+      <option value="">All Decades</option>
+      <option value="196">1960s</option>
+      <option value="197">1970s</option>
+      <option value="198">1980s</option>
+      <option value="199">1990s</option>
+    </select>
+    
+    <div class="timed-options">
+        <button class="timed" onclick="toggleTimedMode(this)">Timed Mode</button>
+        <select id="timedDurationSelect">
+            <option value="10">10s</option>
+            <option value="20" selected>20s</option>
+            <option value="30">30s</option>
+            <option value="45">45s</option>
+            <option value="60">60s</option>
+        </select>
+    </div>
+
+    <div id="timerBar"></div>
+    
+    <div id="gameModeIndicator"></div>
+
+    <p id="result" class="neutral"></p>
+    <p id="score">Session Score: 0 | Total Points: 0 | Highest Score: 0 | Streak: 0</p>
+
+    <a href="https://www.gofundme.com/f/our-friend-betty-cantorjackson-could-use-our-help" target="_blank" class="donate">🌸 Donate to Betty</a>
+    <br />
+    <a class="share" href="#" onclick="copyShareLink(event, false)">🔗 Share The Fun</a>
+    <button id="viewStatsButton" class="reveal small-button" onclick="showStatsModal()">View My Stats</button>
+    <p id="thankYou">Thank a Taper</p>
+  </div>
+
+  <div id="dailySummaryModal" class="modal">
+    <div class="modal-content">
+      <span class="modal-close" onclick="closeModal('dailySummaryModal')">&times;</span>
+      <h2>Daily Results <span id="summaryDate" style="color: #ffc107;"></span></h2>
+      <div id="summaryGraphic"></div>
+      <div id="summaryDetails"></div>
+      <button class="modal-button" onclick="copyShareLink(event, true)">Share Your Results</button>
+      <button class="modal-button continue" onclick="closeDailySummaryAndEnterFreePlay()">Continue to Free Play</button>
+    </div>
+  </div>
+
+  <div id="statsModal" class="modal">
+    <div class="modal-content">
+      <span class="modal-close" onclick="closeModal('statsModal')">&times;</span>
+      <h2>My Overall Stats</h2>
+      <div id="statsDetails"></div>
+      <button class="modal-button continue" onclick="closeModal('statsModal')">Close</button>
+    </div>
+  </div>
+
+<script>
+let currentTrack = null;
+let totalSessionGuesses = 0;
+let sessionPoints = 0;
+let currentStreak = 0;
+let siteHighestScore = parseInt(localStorage.getItem('gd_site_highest_score')) || 0;
+let allTracks = []; 
+let availableTracksForSession = []; // Used to manage available tracks for the current play session
+let timedMode = false;
+let timer = null;
+let initialTimeLimit = 20; 
+let timeLeft = initialTimeLimit; 
+let answerRevealed = false;
+
+// --- GAME MODE GLOBAL VARIABLES ---
+const DAILY_CHALLENGE_SONG_COUNT = 5;
+const FREE_PLAY_ROUND_SONG_COUNT = 5; // New constant for free play rounds
+
+let dailyGuessesToday = 0; 
+let dailyResults = []; // Stores results for the daily challenge (5 songs)
+let todaysDailySongs = []; 
+let inFreePlayMode = false; // Tracks if the user is in Free Play mode
+
+// --- LIFETIME STATS GLOBAL VARIABLES ---
+// Stores an array of guess objects: { timestamp, track, correctYear, guessedYear, points, diff, venue, location }
+let lifetimeGuessHistory = JSON.parse(localStorage.getItem('gd_lifetimeGuessHistory')) || [];
+const MAX_HISTORY_ENTRIES = 1000; // Cap history to prevent excessive localStorage usage
+
+// --- HELPER FUNCTIONS ---
+
+/**
+ * Returns today's date in 'YYYY-MM-DD' format (UTC) for consistent seeding.
+ */
+function getTodayString() {
+    const now = new Date();
+    return now.getUTCFullYear() + '-' +
+           String(now.getUTCMonth() + 1).padStart(2, '0') + '-' +
+           String(now.getUTCDate()).padStart(2, '0');
+}
+
+/**
+ * Returns a date in a readable format like "July 6th, 2025".
+ */
+function getFormattedDate(dateString) {
+    const date = new Date(dateString + 'T12:00:00Z'); 
+    
+    const day = date.getUTCDate();
+    let suffix;
+    if (day > 3 && day < 21) suffix = 'th';
+    else {
+        switch (day % 10) {
+            case 1:  suffix = 'st'; break;
+            case 2:  suffix = 'nd'; break;
+            case 3:  suffix = 'rd'; break;
+            default: suffix = 'th';
+        }
+    }
+    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' }).replace(/\d+/, day + suffix) + ', ' + date.getFullYear();
+}
+
+/**
+ * Simple pseudo-random number generator for consistent shuffling based on a seed.
+ */
+function mulberry32(seed) {
+    return function() {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t = (t ^ t >>> 7) + (t ^ t >>> 14);
+        return ((t >>> 0) / 4294967296);
+    }
+}
+
+/**
+ * Fisher-Yates shuffle with a seedable random function.
+ */
+function seededShuffle(array, randomFunc) {
+    let currentIndex = array.length, randomIndex;
+    while (currentIndex != 0) {
+        randomIndex = Math.floor(randomFunc() * currentIndex);
+        currentIndex--;
+        [array[currentIndex], array[randomIndex]] = [
+            array[randomIndex], array[currentIndex]];
+    }
+    return array;
+}
+
+// --- CORE GAME LOGIC ---
+
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadTracksJson(); 
+    checkDailyStatus(); // Determines if daily challenge is done for today
+
+    // Set initial timed duration and listener
+    const timedDurationSelect = document.getElementById('timedDurationSelect');
+    initialTimeLimit = parseInt(timedDurationSelect.value); // Set initial limit from default
+    timeLeft = initialTimeLimit; // Ensure current time matches initial limit
+    
+    timedDurationSelect.addEventListener('change', (event) => {
+        initialTimeLimit = parseInt(event.target.value); // Update initial time limit
+        if (timedMode && !answerRevealed) { // Restart timer with new duration if active
+            startTimer();
+        }
+    });
+
+    updateScoreDisplay(); // Initialize score display
+});
+
+async function loadTracksJson() {
+    try {
+        const res = await fetch('tracks.json');
+        allTracks = await res.json();
+    } catch (error) {
+        console.error('Error loading tracks.json:', error);
+        document.getElementById('result').textContent = 'Could not load tracks. Please refresh!';
+    }
+}
+
+/**
+ * Manages the daily song queue and user progress.
+ */
+function checkDailyStatus() {
+    const lastPlayDate = localStorage.getItem('gd_lastPlayDate');
+    const today = getTodayString();
+
+    todaysDailySongs = getTodaysUniversalSongs(); // Always get today's songs regardless of play status
+
+    if (lastPlayDate === today) {
+        dailyGuessesToday = parseInt(localStorage.getItem('gd_dailyGuessesToday')) || 0;
+        dailyResults = JSON.parse(localStorage.getItem('gd_dailyResults')) || [];
+        sessionPoints = parseInt(localStorage.getItem('gd_sessionPoints')) || 0; // Restore session points
+        currentStreak = parseInt(localStorage.getItem('gd_currentStreak')) || 0; // Restore streak
+
+        if (dailyGuessesToday >= DAILY_CHALLENGE_SONG_COUNT) {
+            inFreePlayMode = true;
+            removeDailySongsFromFreePlayPool(); // Ensure daily songs are excluded from free play
+        } else {
+            inFreePlayMode = false;
+            availableTracksForSession = [...allTracks]; // Reset for potential decade filtering
+        }
+    } else {
+        // New day, reset daily challenge data
+        localStorage.setItem('gd_lastPlayDate', today);
+        localStorage.setItem('gd_dailyGuessesToday', '0');
+        localStorage.setItem('gd_dailyResults', '[]');
+        dailyGuessesToday = 0;
+        dailyResults = [];
+        inFreePlayMode = false;
+        availableTracksForSession = [...allTracks]; // Reset for new session
+        
+        // Don't reset sessionPoints or currentStreak here, those persist across daily/freeplay
+        // Only reset them when starting a new "game" or round logic.
+        // For now, these are considered "session" stats for the current browser session.
+    }
+    updateGameModeUI();
+}
+
+/**
+ * Gets the 5 universal songs for today's daily challenge.
+ * Manages a global shuffled queue in localStorage that all users draw from.
+ */
+function getTodaysUniversalSongs() {
+    const today = getTodayString();
+    const dateSeed = parseInt(today.replace(/-/g, '')); 
+    const random = mulberry32(dateSeed); 
+
+    let globalQueue = JSON.parse(localStorage.getItem('gd_globalSongQueue')) || [];
+    let globalQueueIndex = parseInt(localStorage.getItem('gd_globalQueueIndex')) || 0;
+    let lastQueueShuffleDate = localStorage.getItem('gd_lastQueueShuffleDate');
+
+    const currentTrackFilenames = new Set(allTracks.map(t => t.filename));
+    const queueFilenames = new Set(globalQueue.map(t => t.filename));
+    const missingTracks = [...currentTrackFilenames].filter(f => !queueFilenames.has(f));
+
+    if (globalQueue.length === 0 || globalQueueIndex >= globalQueue.length || missingTracks.length > 0 || lastQueueShuffleDate !== today) {
+        console.log('Resetting/Updating global song queue due to exhaustion, new tracks, or new day.');
+        globalQueue = [...allTracks]; 
+        globalQueue = seededShuffle(globalQueue, random); 
+        
+        if (lastQueueShuffleDate !== today) {
+            let previousIndex = parseInt(localStorage.getItem('gd_globalQueueIndex')) || 0;
+            globalQueueIndex = (previousIndex + DAILY_CHALLENGE_SONG_COUNT) % globalQueue.length;
+            
+            if (globalQueueIndex >= globalQueue.length) {
+                globalQueueIndex = 0;
+            }
+        } else {
+            globalQueueIndex = 0;
+        }
+
+        localStorage.setItem('gd_globalSongQueue', JSON.stringify(globalQueue));
+        localStorage.setItem('gd_globalQueueIndex', globalQueueIndex.toString());
+        localStorage.setItem('gd_lastQueueShuffleDate', today); 
+    }
+    
+    const dailySongs = [];
+    for (let i = 0; i < DAILY_CHALLENGE_SONG_COUNT; i++) {
+        const songIndex = (globalQueueIndex + i) % globalQueue.length; 
+        dailySongs.push(globalQueue[songIndex]);
+    }
+    return dailySongs;
+}
+
+/**
+ * Removes today's daily challenge songs from the available free play pool.
+ */
+function removeDailySongsFromFreePlayPool() {
+    const dailyFilenames = new Set(todaysDailySongs.map(t => t.filename));
+    availableTracksForSession = availableTracksForSession.filter(track => !dailyFilenames.has(track.filename));
+}
+
+function updateGameModeUI() {
+    const indicator = document.getElementById('gameModeIndicator');
+    const decadeSelect = document.getElementById('decadeSelect');
+    const timedOptions = document.querySelector('.timed-options');
+    const goButton = document.getElementById('goButton');
+
+    if (inFreePlayMode) {
+        indicator.textContent = `Free Play Mode`;
+        indicator.style.display = 'block'; 
+        decadeSelect.style.display = 'block'; 
+        timedOptions.style.display = 'flex'; 
+        goButton.disabled = false; // Always enabled in free play
+        goButton.textContent = 'Next';
+        document.getElementById('result').textContent = 'Daily Challenge complete! Welcome to Free Play.';
+    } else {
+        const guessesLeft = DAILY_CHALLENGE_SONG_COUNT - dailyGuessesToday;
+        indicator.textContent = `Daily Challenge: ${dailyGuessesToday}/${DAILY_CHALLENGE_SONG_COUNT} Guesses`;
+        indicator.style.display = 'block'; 
+        decadeSelect.style.display = 'none'; 
+        timedOptions.style.display = 'none'; 
+        goButton.disabled = (dailyGuessesToday >= DAILY_CHALLENGE_SONG_COUNT); // Disable if daily challenge is exhausted
+        goButton.textContent = (dailyGuessesToday === 0 && !currentTrack) ? 'Go' : 'Next';
+        document.getElementById('result').textContent = dailyGuessesToday === 0 ? 'Press "Go" to start your Daily Challenge!' : `Round in progress: ${guessesLeft} song${guessesLeft === 1 ? '' : 's'} left.`;
+    }
+}
+
+/**
+ * A single function to load the correct track based on game mode.
+ */
+function loadTrack() {
+    let track;
+    if (!inFreePlayMode) {
+        if (dailyGuessesToday < DAILY_CHALLENGE_SONG_COUNT) {
+            track = todaysDailySongs[dailyGuessesToday];
+        } else {
+            // This should ideally be caught by updateGameModeUI disabling the button, but as a safeguard:
+            inFreePlayMode = true;
+            updateGameModeUI();
+            showDailySummary(); 
+            return;
+        }
+    } else {
+        // Free Play Logic (rounds of 5)
+        if (totalSessionGuesses % FREE_PLAY_ROUND_SONG_COUNT === 0) {
+             // If starting a new round of 5 in free play, reset available tracks if needed
+            if (availableTracksForSession.length < FREE_PLAY_ROUND_SONG_COUNT) {
+                availableTracksForSession = [...allTracks]; 
+                removeDailySongsFromFreePlayPool(); // Always exclude daily songs
+                const currentDecade = document.getElementById('decadeSelect').value;
+                if (currentDecade) { // Reapply decade filter if active
+                    availableTracksForSession = availableTracksForSession.filter(t => t.year.startsWith(currentDecade));
+                }
+                if (availableTracksForSession.length === 0) {
+                     document.getElementById('result').textContent = 'No more tracks available for selected filters!';
+                     return;
+                }
+                alert("Starting a new random cycle of Free Play songs!");
+            }
+        }
+        
+        // Pick a random track from the available pool
+        const randIndex = Math.floor(Math.random() * availableTracksForSession.length);
+        track = availableTracksForSession[randIndex];
+        availableTracksForSession.splice(randIndex, 1); // Remove from pool
+    }
+
+    if (!track) {
+        document.getElementById('result').textContent = 'No more tracks available!';
+        return;
+    }
+    
+    currentTrack = track;
+    answerRevealed = false;
+    document.getElementById('audio').src = `audio/${track.filename}`;
+    document.getElementById('audio').load();
+    document.getElementById('audio').play().catch(() => {});
+    document.getElementById('result').textContent = '';
+    document.getElementById('result').className = 'neutral';
+    document.getElementById('yearGuess').value = '';
+    document.getElementById('checkButton').disabled = false;
+
+    if (timedMode) startTimer(); // Start/reset timer when new song loads
+}
+
+function revealAnswer() {
+    if (!currentTrack || answerRevealed) return;
+    answerRevealed = true;
+    clearInterval(timer);
+    document.getElementById('timerBar').style.display = 'none';
+    document.getElementById('checkButton').disabled = true;
+
+    let guessInput = document.getElementById('yearGuess').value.trim();
+    let guessedYearNum = parseInt(guessInput, 10);
+    let displayGuess = guessInput; // What we show to the user
+
+    // Handle 2-digit year input for display only, still use 4-digit for calculation
+    if (/^\d{2}$/.test(guessInput)) {
+        guessedYearNum = (guessedYearNum >= 65 && guessedYearNum <= 99 ? 1900 : 2000) + guessedYearNum;
+        displayGuess = guessedYearNum.toString();
+    } else if (!/^\d{4}$/.test(guessInput) || isNaN(guessedYearNum)) {
+        guessedYearNum = null; // No valid guess
+        displayGuess = 'No guess';
+    }
+
+    const correctYear = parseInt(currentTrack.year, 10);
+    const difference = guessedYearNum !== null ? Math.abs(guessedYearNum - correctYear) : Infinity;
+
+    let pointsEarned = 0;
+    let resultClass = 'incorrect';
+    let message = 'Not Quite!';
+    let isPerfect = false;
+    let isClose = false; // For +/- 1 or 2
+    let isEra = false; // For +/- 3 to 5
+
+    if (guessedYearNum === correctYear) {
+        pointsEarned = 100;
+        resultClass = 'correct';
+        message = 'Correct!';
+        isPerfect = true;
+        currentStreak++;
+    } else if (difference <= 1) {
+        pointsEarned = 75;
+        resultClass = 'close-guess';
+        message = `Very Close! (${difference} year${difference === 1 ? '' : 's'} off)`;
+        isClose = true;
+        currentStreak = 0; // Reset streak on non-perfect
+    } else if (difference <= 2) {
+        pointsEarned = 50;
+        resultClass = 'close-guess';
+        message = `Close! (${difference} year${difference === 1 ? '' : 's'} off)`;
+        isClose = true;
+        currentStreak = 0;
+    } else if (difference <= 5) { 
+        pointsEarned = 25;
+        resultClass = 'era-guess';
+        message = `Era Match! (${difference} year${difference === 1 ? '' : 's'} off)`;
+        isEra = true;
+        currentStreak = 0;
+    } else {
+        pointsEarned = 0;
+        resultClass = 'incorrect';
+        message = `Not Quite! (${guessedYearNum !== null ? difference : '??'} year${difference === 1 ? '' : 's'} off)`;
+        currentStreak = 0;
+    }
+
+    sessionPoints += pointsEarned;
+    totalSessionGuesses++;
+
+    // Update global high score if session points exceed it
+    if (sessionPoints > siteHighestScore) {
+        siteHighestScore = sessionPoints;
+        localStorage.setItem('gd_site_highest_score', siteHighestScore);
+    }
+    localStorage.setItem('gd_sessionPoints', sessionPoints);
+    localStorage.setItem('gd_currentStreak', currentStreak);
+
+    // Store daily result if in daily challenge
+    if (!inFreePlayMode) {
+        dailyResults.push({
+            correct: isPerfect,
+            close: isClose,
+            era: isEra, 
+            guess: displayGuess,
+            points: pointsEarned,
+            trackInfo: `${currentTrack.track} (${currentTrack.year})`
+        });
+        dailyGuessesToday++; 
+        localStorage.setItem('gd_dailyGuessesToday', dailyGuessesToday.toString());
+        localStorage.setItem('gd_dailyResults', JSON.stringify(dailyResults));
+
+        if (dailyGuessesToday >= DAILY_CHALLENGE_SONG_COUNT) {
+            showDailySummary(); // Show summary after the last daily guess
+        }
+    }
+
+
+    // Store lifetime guess history
+    lifetimeGuessHistory.push({
+        timestamp: new Date().toISOString(),
+        track: currentTrack.track,
+        correctYear: currentTrack.year,
+        guessedYear: displayGuess,
+        points: pointsEarned,
+        diff: guessedYearNum !== null ? difference : null,
+        venue: currentTrack.venue,
+        location: currentTrack.location
+    });
+
+    // Prune history if it gets too large
+    if (lifetimeGuessHistory.length > MAX_HISTORY_ENTRIES) {
+        console.warn('Lifetime guess history is getting large. Pruning oldest entries.');
+        lifetimeGuessHistory = lifetimeGuessHistory.slice(lifetimeGuessHistory.length - MAX_HISTORY_ENTRIES / 2); // Keep last half
+    }
+    localStorage.setItem('gd_lifetimeGuessHistory', JSON.stringify(lifetimeGuessHistory));
+
+
+    const resultEl = document.getElementById('result');
+    resultEl.className = resultClass;
+    resultEl.textContent = `${message}\nYou guessed: ${displayGuess} — Correct Year: ${currentTrack.year}\nPoints: ${pointsEarned}\n\nSong: ${currentTrack.track}\nDate: ${currentTrack.date}\n${currentTrack.venue}, ${currentTrack.location}`;
+    
+    updateScoreDisplay();
+    updateGameModeUI(); 
+}
+
+function showDailySummary() {
+    const modal = document.getElementById('dailySummaryModal');
+    document.getElementById('summaryDate').textContent = `(${getFormattedDate(getTodayString())})`;
+    const graphicEl = document.getElementById('summaryGraphic');
+    const detailsEl = document.getElementById('summaryDetails');
+    
+    let graphic = dailyResults.map(r => {
+        if (r.correct) return '🟩';
+        if (r.close) return '🟨'; 
+        if (r.era) return '🟨'; 
+        return '🟥';
+    }).join(' ');
+
+    let totalDailyPoints = dailyResults.reduce((sum, r) => sum + r.points, 0);
+    let dailyPerfect = dailyResults.filter(r => r.correct).length;
+    let dailyClose = dailyResults.filter(r => r.close).length;
+    let dailyEra = dailyResults.filter(r => r.era).length;
+
+    detailsEl.innerHTML = `
+        <strong>Your Daily Score: ${totalDailyPoints} Points</strong><br>
+        Perfect Guesses: ${dailyPerfect}<br>
+        Close Guesses ($\pm2$ years): ${dailyClose}<br>
+        Era Matches ($\pm5$ years): ${dailyEra}<br><br>
+        ${dailyResults.map((result, index) => {
+            let statusIcon = '❌';
+            if (result.correct) statusIcon = '✅';
+            else if (result.close || result.era) statusIcon = '🔶'; 
+            return `${statusIcon} Guess ${index + 1}: ${result.trackInfo} | Your Guess: ${result.guess} | Points: ${result.points}`;
+        }).join('\n')}
+    `;
+    modal.style.display = 'block';
+}
+
+function closeDailySummaryAndEnterFreePlay() {
+    document.getElementById('dailySummaryModal').style.display = 'none';
+    inFreePlayMode = true;
+    removeDailySongsFromFreePlayPool(); // Ensure daily songs are excluded from Free Play
+    updateGameModeUI();
+    document.getElementById('result').textContent = 'Daily Challenge complete! Welcome to Free Play. Press "Next" for a random song.';
+}
+
+
+function showStatsModal() {
+    const modal = document.getElementById('statsModal');
+    const statsDetailsEl = document.getElementById('statsDetails');
+
+    const totalGames = lifetimeGuessHistory.length;
+    const totalLifetimePoints = lifetimeGuessHistory.reduce((sum, guess) => sum + guess.points, 0);
+    const lifetimePerfectGuesses = lifetimeGuessHistory.filter(g => g.points === 100).length;
+    const lifetimeCloseGuesses = lifetimeGuessHistory.filter(g => g.points === 75 || g.points === 50).length;
+    const lifetimeEraMatches = lifetimeGuessHistory.filter(g => g.points === 25).length;
+    
+    const perfectAccuracy = totalGames > 0 ? ((lifetimePerfectGuesses / totalGames) * 100).toFixed(1) : 0;
+    const overallSuccessRate = totalGames > 0 ? (((lifetimePerfectGuesses + lifetimeCloseGuesses + lifetimeEraMatches) / totalGames) * 100).toFixed(1) : 0;
+
+    // Calculate average difference for valid numerical guesses
+    const validDifferences = lifetimeGuessHistory
+        .filter(g => g.diff !== null && !isNaN(g.diff) && g.points < 100) // Exclude perfect guesses from average diff
+        .map(g => g.diff);
+    const averageDifference = validDifferences.length > 0 ? (validDifferences.reduce((sum, diff) => sum + diff, 0) / validDifferences.length).toFixed(1) : 'N/A';
+
+    // Calculate most common incorrect decade (from 0-point guesses)
+    const incorrectDecadeCounts = {};
+    lifetimeGuessHistory.forEach(guess => {
+        if (guess.points === 0 && guess.guessedYear !== 'No guess' && guess.guessedYear && !isNaN(parseInt(guess.guessedYear, 10))) {
+            const guessedYear = parseInt(guess.guessedYear, 10);
+            const decade = Math.floor(guessedYear / 10) * 10 + 's';
+            incorrectDecadeCounts[decade] = (incorrectDecadeCounts[decade] || 0) + 1;
+        }
+    });
+    let mostCommonIncorrectDecade = 'N/A';
+    let maxIncorrectCount = 0;
+    for (const decade in incorrectDecadeCounts) {
+        if (incorrectDecadeCounts[decade] > maxIncorrectCount) {
+            maxIncorrectCount = incorrectDecadeCounts[decade];
+            mostCommonIncorrectDecade = decade;
+        }
+    }
+
+    // Determine highest streak across lifetime
+    let lifetimeHighestStreak = 0;
+    let currentConsecutiveCorrect = 0;
+    for (let i = 0; i < lifetimeGuessHistory.length; i++) {
+        if (lifetimeGuessHistory[i].points === 100) { // Only count perfect guesses for streak
+            currentConsecutiveCorrect++;
+        } else {
+            currentConsecutiveCorrect = 0;
+        }
+        if (currentConsecutiveCorrect > lifetimeHighestStreak) {
+            lifetimeHighestStreak = currentConsecutiveCorrect;
+        }
+    }
+    localStorage.setItem('gd_lifetimeHighestStreak', lifetimeHighestStreak);
+
+
+    // Prepare yearly breakdown
+    const yearlyBreakdown = lifetimeGuessHistory.reduce((acc, guess) => {
+        if (guess.correctYear) {
+            const year = guess.correctYear;
+            acc[year] = acc[year] || { games: 0, points: 0 };
+            acc[year].games++;
+            acc[year].points += guess.points;
+        }
+        return acc;
+    }, {});
+    const sortedYears = Object.keys(yearlyBreakdown).sort();
+
+    // Prepare venue breakdown
+    const venueBreakdown = lifetimeGuessHistory.reduce((acc, guess) => {
+        if (guess.venue) {
+            const venue = guess.venue;
+            acc[venue] = acc[venue] || { games: 0, points: 0 };
+            acc[venue].games++;
+            acc[venue].points += guess.points;
+        }
+        return acc;
+    }, {});
+    const sortedVenues = Object.keys(venueBreakdown).sort((a,b) => venueBreakdown[b].points - venueBreakdown[a].points); // Sort by points descending
+
+    let statsHtml = `
+        <h3>Overall Performance</h3>
+        <p><strong>Total Games Played:</strong> ${totalGames}</p>
+        <p><strong>Total Points Earned:</strong> ${totalLifetimePoints}</p>
+        <p><strong>Perfect Guesses:</strong> ${lifetimePerfectGuesses} (${perfectAccuracy}%)</p>
+        <p><strong>Close Guesses (±2 years):</strong> ${lifetimeCloseGuesses}</p>
+        <p><strong>Era Matches (±5 years):</strong> ${lifetimeEraMatches}</p>
+        <p><strong>Overall Success Rate (Perfect + Close + Era):</strong> ${overallSuccessRate}%</p>
+        <p><strong>Highest Streak:</strong> ${lifetimeHighestStreak}</p>
+        <p><strong>Average Year Difference (when not perfect):</strong> ${averageDifference} years</p>
+        <p><strong>Most Common Incorrect Decade:</strong> ${mostCommonIncorrectDecade}</p>
+        <p><em>(Stats are updated after each guess and saved in your browser.)</em></p>
+        
+        <h3>Year-by-Year Performance</h3>
+        <table>
+            <thead><tr><th>Year</th><th>Games</th><th>Points</th></tr></thead>
+            <tbody>
+                ${sortedYears.map(year => `<tr><td>${year}</td><td>${yearlyBreakdown[year].games}</td><td>${yearlyBreakdown[year].points}</td></tr>`).join('')}
+            </tbody>
+        </table>
+
+        <h3>Top Venues (by Points)</h3>
+        <table>
+            <thead><tr><th>Venue</th><th>Games</th><th>Points</th></tr></thead>
+            <tbody>
+                ${sortedVenues.map(venue => `<tr><td>${venue}</td><td>${venueBreakdown[venue].games}</td><td>${venueBreakdown[venue].points}</td></tr>`).join('')}
+            </tbody>
+        </table>
+
+        <h3>Full Guess History</h3>
+        <div style="max-height: 200px; overflow-y: auto; text-align: left; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 0.5em;">
+            ${lifetimeGuessHistory.length === 0 ? '<p>No guess history yet.</p>' :
+                lifetimeGuessHistory.slice().reverse().map(g => `
+                    <p style="border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 5px; margin-bottom: 5px;">
+                        <strong>${getFormattedDate(g.timestamp.split('T')[0])}:</strong> ${g.track} (${g.correctYear})<br>
+                        Guessed: ${g.guessedYear} | Points: ${g.points} ${g.diff !== null ? `(${g.diff} off)` : ''}
+                        <br><small>${g.venue}, ${g.location}</small>
+                    </p>
+                `).join('')
+            }
+        </div>
+    `;
+
+    statsDetailsEl.innerHTML = statsHtml;
+    modal.style.display = 'block';
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+function copyShareLink(event, isFromResultModal) {
+    event.preventDefault();
+    let shareText;
+    if (isFromResultModal && dailyResults.length > 0) {
+        const graphic = dailyResults.map(r => {
+            if (r.correct) return '🟩';
+            if (r.close || r.era) return '🟨';
+            return '🟥';
+        }).join('');
+        const totalDailyPoints = dailyResults.reduce((sum, r) => sum + r.points, 0);
+        const dailyPerfect = dailyResults.filter(r => r.correct).length;
+        const dailyClose = dailyResults.filter(r => r.close).length;
+        const dailyEra = dailyResults.filter(r => r.era).length;
+
+        shareText = `DeadGuessr Daily Challenge ${getFormattedDate(getTodayString())}\nMy Round Score: ${totalDailyPoints} points! (${dailyPerfect} Perfect, ${dailyClose} Close, ${dailyEra} Era)\n${graphic}\n\nPlay here: ${window.location.href}`;
+    } else {
+        shareText = `I'm testing my Dead knowledge on DeadGuessr! Come play along and guess the year: ${window.location.href}`;
+    }
+
+    navigator.clipboard.writeText(shareText).then(() => {
+        alert('Results copied to clipboard!');
+    }).catch(err => console.error('Failed to copy: ', err));
+}
+
+function updateScoreDisplay() {
+    // Determine highest streak across lifetime from stored history
+    let lifetimeHighestStreak = 0;
+    let currentConsecutivePerfect = 0;
+    for (let i = 0; i < lifetimeGuessHistory.length; i++) {
+        if (lifetimeGuessHistory[i].points === 100) {
+            currentConsecutivePerfect++;
+        } else {
+            currentConsecutivePerfect = 0;
+        }
+        if (currentConsecutivePerfect > lifetimeHighestStreak) {
+            lifetimeHighestStreak = currentConsecutivePerfect;
+        }
+    }
+    localStorage.setItem('gd_lifetimeHighestStreak', lifetimeHighestStreak);
+
+
+    document.getElementById('score').textContent = `Session Score: ${sessionPoints} | Total Points: ${siteHighestScore} | Streak: ${currentStreak}`;
+}
+
+function toggleTimedMode(btn) {
+    if (!inFreePlayMode) {
+        alert('Timed mode is only available in Free Play mode after completing the daily challenge.');
+        return;
+    }
+    timedMode = !timedMode;
+    btn.classList.toggle('active', timedMode);
+    const timedDurationSelect = document.getElementById('timedDurationSelect');
+
+    if (timedMode) {
+        timedDurationSelect.style.display = 'inline-block'; 
+        initialTimeLimit = parseInt(timedDurationSelect.value); 
+        timeLeft = initialTimeLimit; 
+        if (!answerRevealed && currentTrack) startTimer(); 
+    } else {
+        timedDurationSelect.style.display = 'none'; 
+        clearInterval(timer);
+        document.getElementById('timerBar').style.display = 'none';
+    }
+}
+
+function startTimer() {
+    clearInterval(timer); 
+    timeLeft = initialTimeLimit; 
+    const bar = document.getElementById('timerBar');
+    bar.style.display = 'block';
+    bar.style.width = '100%';
+
+    timer = setInterval(() => {
+        timeLeft--;
+        bar.style.width = `${(timeLeft / initialTimeLimit) * 100}%`; 
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            if(!answerRevealed) revealAnswer();
+            bar.style.display = 'none';
+        }
+    }, 1000);
+}
+
+function filterByDecade(decadePrefix) {
+    if (!inFreePlayMode) {
+        document.getElementById('decadeSelect').value = ''; 
+        alert('Decade filtering is only available in Free Play mode after completing the daily challenge.');
+        return;
+    }
+
+    availableTracksForSession = [...allTracks];
+    removeDailySongsFromFreePlayPool(); // Always exclude daily songs
+
+    if (decadePrefix) {
+        availableTracksForSession = availableTracksForSession.filter(t => t.year.startsWith(decadePrefix));
+    }
+    document.getElementById('decadeSelect').value = decadePrefix;
+    document.getElementById('result').textContent = `Filter set to ${decadePrefix ? decadePrefix + '0s' : 'All Decades'} for Free Play. Press "Next" to get a song.`;
+}
+
+document.addEventListener('keydown', function(event) {
+    if (document.activeElement === document.getElementById('yearGuess') && event.key === 'Enter') {
+        event.preventDefault();
+        if (!answerRevealed) revealAnswer();
+    }
+});
+</script>
+
+<footer style="font-size: 0.8em; text-align: center; margin-top: 2em; color: #ccc;">
+  <a href="https://github.com/Gignac77" target="_blank" rel="noopener noreferrer" style="color: #ccc; text-decoration: none;">
+    Built with Love by Matt
+  </a>
+</footer>
+</body>
+</html>
