@@ -179,14 +179,21 @@
       padding: 0.4em;
       font-size: 1em;
       font-family: 'Comic Neue', cursive;
+      /* Ensure select is centered */
+      display: block; 
+      margin-left: auto;
+      margin-right: auto;
     }
     #gameModeIndicator {
         font-size: 1.1em;
         margin-top: 1em;
         color: #ffc107;
         font-weight: bold;
+        /* Hide by default, shown only in daily challenge */
+        display: none; 
     }
-    #dailySummaryModal {
+    /* Styles for Modals */
+    .modal {
         display: none;
         position: fixed;
         z-index: 100;
@@ -208,25 +215,49 @@
         border-radius: 1em;
         text-align: center;
         color: #fff;
+        position: relative; /* For the close button */
+    }
+    .modal-close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        position: absolute;
+        top: 10px;
+        right: 20px;
+    }
+    .modal-close:hover,
+    .modal-close:focus {
+        color: white;
+        text-decoration: none;
+        cursor: pointer;
     }
     #summaryGraphic {
         font-size: 2em;
         letter-spacing: 0.2em;
         margin: 1em 0;
     }
-    #summaryDetails {
+    #summaryDetails, #sessionLogContent {
         text-align: left;
         white-space: pre-wrap;
         max-height: 200px;
         overflow-y: auto;
         padding-right: 10px;
         margin-bottom: 1.5em;
+        font-size: 0.9em;
     }
     .modal-button {
         background-color: #17a2b8;
     }
     .modal-button.continue {
         background-color: #28a745;
+    }
+    .session-log-entry {
+        border-bottom: 1px dashed rgba(255,255,255,0.2);
+        padding: 0.5em 0;
+    }
+    .session-log-entry:last-child {
+        border-bottom: none;
     }
   </style>
 </head>
@@ -252,6 +283,8 @@
     <button id="checkButton" class="reveal" onclick="revealAnswer()">Check Answer</button>
     <br />
     <button class="timed" onclick="toggleTimedMode(this)">Timed Mode</button>
+    <button id="viewDailyResultsButton" class="reveal" style="display: none; margin-top: 0.5em;" onclick="showDailySummary()">View Daily Results</button>
+    <button id="viewSessionLogButton" class="reveal" style="margin-top: 0.5em;" onclick="showSessionLog()">View Session Log</button>
 
     <div id="timerBar"></div>
     
@@ -270,17 +303,27 @@
 
     <a href="https://www.gofundme.com/f/our-friend-betty-cantorjackson-could-use-our-help" target="_blank" class="donate">🌸 Donate to Betty</a>
     <br />
-    <a class="share" href="#" onclick="copyShareLink(event, false)">🔗 Share This Game</a>
+    <a class="share" href="#" onclick="copyShareLink(event, false)">🔗 Share The Fun</a>
     <p id="thankYou">Thank a Taper</p>
   </div>
 
-  <div id="dailySummaryModal">
+  <div id="dailySummaryModal" class="modal">
     <div class="modal-content">
+      <span class="modal-close" onclick="closeSummaryModal()">&times;</span>
       <h2>Daily Results <span id="summaryDate" style="color: #ffc107;"></span></h2>
       <div id="summaryGraphic"></div>
       <div id="summaryDetails"></div>
       <button class="modal-button" onclick="copyShareLink(event, true)">Share Your Results</button>
       <button class="modal-button continue" onclick="closeSummaryModal()">Continue to Free Play</button>
+    </div>
+  </div>
+
+  <div id="sessionLogModal" class="modal">
+    <div class="modal-content">
+      <span class="modal-close" onclick="closeSessionLogModal()">&times;</span>
+      <h2>Session Log</h2>
+      <div id="sessionLogContent"></div>
+      <button class="modal-button continue" onclick="closeSessionLogModal()">Close</button>
     </div>
   </div>
 
@@ -290,20 +333,20 @@ let totalAttempts = 0;
 let correctAttempts = 0;
 let streak = 0;
 let siteHighScore = parseInt(localStorage.getItem('gd_site_highscore')) || 0;
-let allTracks = []; // Stores all tracks loaded from JSON
-let filteredTracks = []; // Not explicitly used for free play in this version, available for future use
-let availableTracksForSession = []; // Tracks for current free play session, avoiding repeats in a single session
+let allTracks = []; 
+let availableTracksForSession = []; 
 let timedMode = false;
 let timer = null;
 let timeLeft = 20;
 let answerRevealed = false;
+let sessionGuesses = []; // Stores data for the session log
 
 // --- DAILY CHALLENGE GLOBAL VARIABLES ---
 const MAX_DAILY_GUESSES = 5;
-let dailyGuesses = 0; // User's guesses made today
-let dailyResults = []; // User's results for today's daily challenge
-let todaysDailySongs = []; // The 5 fixed songs for the current day
-let inFreePlayMode = false; // Flag to indicate if user is in free play
+let dailyGuesses = 0; 
+let dailyResults = []; 
+let todaysDailySongs = []; 
+let inFreePlayMode = false; 
 
 // --- HELPER FUNCTIONS FOR DAILY CHALLENGE ---
 
@@ -316,6 +359,15 @@ function getTodayString() {
     return now.getUTCFullYear() + '-' +
            String(now.getUTCMonth() + 1).padStart(2, '0') + '-' +
            String(now.getUTCDate()).padStart(2, '0');
+}
+
+/**
+ * Returns today's date in a readable format like "July 6th, 2025".
+ */
+function getFormattedDate(dateString) {
+    const date = new Date(dateString + 'T12:00:00Z'); // Add T12:00:00Z to ensure it's treated as UTC midday
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    return date.toLocaleDateString('en-US', options);
 }
 
 /**
@@ -348,18 +400,21 @@ function seededShuffle(array, randomFunc) {
 // --- CORE GAME LOGIC ---
 
 document.addEventListener('DOMContentLoaded', async () => {
-    await loadTracksJson(); // Load all tracks first
-    checkDailyStatus(); // Determine game mode and today's 5 songs
+    await loadTracksJson(); 
+    checkDailyStatus(); 
     
     // Set initial message based on game mode
     if (!inFreePlayMode) {
         document.getElementById('result').textContent = 'Press "Go" to start your Daily Challenge!';
-        document.getElementById('decadeSelect').style.display = 'none'; // Hide decade filter for daily
+        document.getElementById('decadeSelect').style.display = 'none'; 
+        document.getElementById('viewDailyResultsButton').style.display = 'none';
+        document.getElementById('gameModeIndicator').style.display = 'block'; // Show indicator for daily challenge
     } else {
         document.getElementById('result').textContent = 'Daily Challenge complete! Welcome to Free Play.';
-        document.getElementById('decadeSelect').style.display = 'block'; // Show decade filter for free play
+        document.getElementById('decadeSelect').style.display = 'block'; 
+        document.getElementById('viewDailyResultsButton').style.display = 'block'; // Show button in free play
+        document.getElementById('gameModeIndicator').style.display = 'none'; // Hide indicator in free play
     }
-    // Update score display regardless of mode
     updateScore();
 });
 
@@ -367,7 +422,6 @@ async function loadTracksJson() {
     try {
         const res = await fetch('tracks.json');
         allTracks = await res.json();
-        // Initialize free play tracks with all tracks initially
         availableTracksForSession = [...allTracks]; 
     } catch (error) {
         console.error('Error loading tracks.json:', error);
@@ -382,27 +436,22 @@ function checkDailyStatus() {
     const lastPlayDate = localStorage.getItem('gd_lastPlayDate');
     const today = getTodayString();
 
-    // Determine today's 5 songs first, which might also manage the global queue index
     todaysDailySongs = getTodaysUniversalSongs();
 
     if (lastPlayDate === today) {
-        // User has played today, load their progress
         dailyGuesses = parseInt(localStorage.getItem('gd_dailyGuesses')) || 0;
         dailyResults = JSON.parse(localStorage.getItem('gd_dailyResults')) || [];
         if (dailyGuesses >= MAX_DAILY_GUESSES) {
             inFreePlayMode = true;
-            // Filter out daily challenge songs from free play pool for today
             removeDailySongsFromFreePlayPool();
         }
     } else {
-        // New day, reset user's daily progress
         localStorage.setItem('gd_lastPlayDate', today);
         localStorage.setItem('gd_dailyGuesses', '0');
         localStorage.setItem('gd_dailyResults', '[]');
         dailyGuesses = 0;
         dailyResults = [];
         inFreePlayMode = false;
-        // Reset available tracks for a new free play session
         availableTracksForSession = [...allTracks]; 
     }
     updateGameModeUI();
@@ -414,62 +463,56 @@ function checkDailyStatus() {
  */
 function getTodaysUniversalSongs() {
     const today = getTodayString();
-    // Convert date string to a consistent number for seeding
     const dateSeed = parseInt(today.replace(/-/g, '')); 
-    const random = mulberry32(dateSeed); // Get seeded random function for today
+    const random = mulberry32(dateSeed); 
 
     let globalQueue = JSON.parse(localStorage.getItem('gd_globalSongQueue')) || [];
     let globalQueueIndex = parseInt(localStorage.getItem('gd_globalQueueIndex')) || 0;
     let lastQueueShuffleDate = localStorage.getItem('gd_lastQueueShuffleDate');
 
-    // Scenario 1: First time loading or all tracks exhausted, or tracks.json updated
-    // Check if globalQueue is empty, or if it doesn't contain all current tracks (new tracks added)
     const currentTrackFilenames = new Set(allTracks.map(t => t.filename));
     const queueFilenames = new Set(globalQueue.map(t => t.filename));
     const missingTracks = [...currentTrackFilenames].filter(f => !queueFilenames.has(f));
 
-    if (globalQueue.length === 0 || globalQueueIndex >= globalQueue.length || missingTracks.length > 0) {
-        console.log('Resetting/Updating global song queue due to exhaustion, new tracks, or first load.');
-        globalQueue = [...allTracks];
+    if (globalQueue.length === 0 || globalQueueIndex >= globalQueue.length || missingTracks.length > 0 || lastQueueShuffleDate !== today) {
+        // Condition for reshuffle and index reset:
+        // 1. Global queue is empty (first load).
+        // 2. Global queue index has gone past the end (all songs played).
+        // 3. New tracks have been added to tracks.json (missingTracks > 0).
+        // 4. It's a new day, and we need to advance the index and potentially wrap/reshuffle.
+        
+        console.log('Resetting/Updating global song queue due to exhaustion, new tracks, or new day.');
+        globalQueue = [...allTracks]; // Always start with all current tracks
         globalQueue = seededShuffle(globalQueue, random); // Shuffle with today's seed
-        localStorage.setItem('gd_globalSongQueue', JSON.stringify(globalQueue));
-        globalQueueIndex = 0; // Reset index
-        localStorage.setItem('gd_globalQueueIndex', globalQueueIndex.toString());
-        localStorage.setItem('gd_lastQueueShuffleDate', today); // Record shuffle date
-    } else if (lastQueueShuffleDate !== today) {
-        // This logic makes sure the index only advances once per day globally
-        // Check if the current queue index would go out of bounds with MAX_DAILY_GUESSES
-        // if (globalQueueIndex + MAX_DAILY_GUESSES > globalQueue.length) {
-        //     // If advancing would exhaust the list, reshuffle and reset index for next day
-        //     console.log('Global queue nearing exhaustion, re-shuffling for next cycle.');
-        //     globalQueue = [...allTracks]; // Ensure new tracks are included
-        //     globalQueue = seededShuffle(globalQueue, random);
-        //     localStorage.setItem('gd_globalSongQueue', JSON.stringify(globalQueue));
-        //     globalQueueIndex = 0;
-        // } else {
-            // Only advance index once per day
-            globalQueueIndex = (globalQueueIndex + MAX_DAILY_GUESSES) % globalQueue.length; // Loop back if needed
-            // Ensure the index doesn't go beyond the bounds and if it does, wrap it around
-            if (globalQueueIndex + MAX_DAILY_GUESSES > globalQueue.length) {
-                 globalQueueIndex = 0; // Start from beginning if not enough songs left
-                 globalQueue = [...allTracks];
-                 globalQueue = seededShuffle(globalQueue, random); // Re-shuffle on cycle end
-                 localStorage.setItem('gd_globalSongQueue', JSON.stringify(globalQueue));
-                 console.log('Global queue wrapped around and re-shuffled.');
+        
+        // If it's a new day, advance the index from yesterday's position
+        if (lastQueueShuffleDate !== today) {
+            let previousIndex = parseInt(localStorage.getItem('gd_globalQueueIndex')) || 0;
+            globalQueueIndex = (previousIndex + MAX_DAILY_GUESSES);
+            
+            // If the advanced index goes beyond the new shuffled array, reset to 0
+            if (globalQueueIndex >= globalQueue.length) {
+                globalQueueIndex = 0;
             }
-        // }
+        } else {
+            // If it's not a new day, but we're here due to exhaustion or new tracks, reset index to 0
+            globalQueueIndex = 0;
+        }
+
+        localStorage.setItem('gd_globalSongQueue', JSON.stringify(globalQueue));
         localStorage.setItem('gd_globalQueueIndex', globalQueueIndex.toString());
-        localStorage.setItem('gd_lastQueueShuffleDate', today); // Update the date for index advance
+        localStorage.setItem('gd_lastQueueShuffleDate', today); 
     }
     
     // Select today's 5 songs from the global queue
     const dailySongs = [];
     for (let i = 0; i < MAX_DAILY_GUESSES; i++) {
-        const songIndex = (globalQueueIndex + i) % globalQueue.length;
+        const songIndex = (globalQueueIndex + i) % globalQueue.length; // Use modulo for wrapping within current globalQueue
         dailySongs.push(globalQueue[songIndex]);
     }
     return dailySongs;
 }
+
 
 /**
  * Removes today's daily challenge songs from the available free play pool.
@@ -482,13 +525,19 @@ function removeDailySongsFromFreePlayPool() {
 function updateGameModeUI() {
     const indicator = document.getElementById('gameModeIndicator');
     const decadeSelect = document.getElementById('decadeSelect');
+    const viewDailyResultsBtn = document.getElementById('viewDailyResultsButton');
+
     if (inFreePlayMode) {
-        indicator.textContent = 'Mode: Free Play';
-        decadeSelect.style.display = 'block'; // Show decade filter in free play
+        indicator.style.display = 'none'; // Hide indicator
+        decadeSelect.style.display = 'block'; 
+        // Only show "View Daily Results" button if user has completed dailies today
+        viewDailyResultsBtn.style.display = (dailyGuesses >= MAX_DAILY_GUESSES) ? 'block' : 'none'; 
     } else {
         const guessesLeft = MAX_DAILY_GUESSES - dailyGuesses;
         indicator.textContent = `Daily Challenge: ${guessesLeft}/${MAX_DAILY_GUESSES} Guesses Left`;
-        decadeSelect.style.display = 'none'; // Hide decade filter for daily challenge
+        indicator.style.display = 'block'; // Show indicator for daily challenge
+        decadeSelect.style.display = 'none'; 
+        viewDailyResultsBtn.style.display = 'none'; // Hide in daily challenge mode
     }
 }
 
@@ -502,23 +551,21 @@ function loadTrack() {
         if (dailyGuesses < MAX_DAILY_GUESSES) {
             track = todaysDailySongs[dailyGuesses];
         } else {
-            // This case should ideally be caught by checkDailyStatus
             inFreePlayMode = true;
             updateGameModeUI();
-            showDailySummary(); // Show summary if they try to "Go" after exhausting dailies
+            showDailySummary(); 
             return;
         }
     } else {
         // Free Play: Load a random track from the available session pool
         if (availableTracksForSession.length === 0) {
-            availableTracksForSession = [...allTracks]; // Re-populate with all tracks
-            // Remove daily songs if they just finished the daily challenge and entered free play
+            availableTracksForSession = [...allTracks]; 
             removeDailySongsFromFreePlayPool(); 
             alert("You've played all available songs in Free Play! Starting a new random cycle.");
         }
         const randIndex = Math.floor(Math.random() * availableTracksForSession.length);
         track = availableTracksForSession[randIndex];
-        availableTracksForSession.splice(randIndex, 1); // Remove to avoid repeats in session
+        availableTracksForSession.splice(randIndex, 1); 
     }
 
     if (!track) {
@@ -535,7 +582,7 @@ function loadTrack() {
     document.getElementById('result').className = 'neutral';
     document.getElementById('yearGuess').value = '';
     document.getElementById('checkButton').disabled = false;
-    document.getElementById('goButton').textContent = 'Next'; // Change button text after first go
+    document.getElementById('goButton').textContent = 'Next'; 
 
     if (timedMode) startTimer();
 }
@@ -555,27 +602,34 @@ function revealAnswer() {
     const correctYear = currentTrack.year;
     const correct = (guess === correctYear);
 
-    totalAttempts++; // Overall session attempts
+    totalAttempts++; 
     if (correct) {
-        correctAttempts++; // Overall session correct
+        correctAttempts++; 
         streak++;
     } else {
         streak = 0;
     }
 
+    // Add guess to session log
+    sessionGuesses.push({
+        track: currentTrack.track,
+        correctYear: correctYear,
+        guessedYear: guess,
+        isCorrect: correct
+    });
+
     if (!inFreePlayMode) {
-        // Record result for daily challenge
         dailyResults.push({
             correct: correct,
             guess: guess,
             trackInfo: `${currentTrack.track} (${correctYear})`
         });
-        dailyGuesses++; // Increment daily guesses count
+        dailyGuesses++; 
         localStorage.setItem('gd_dailyGuesses', dailyGuesses.toString());
         localStorage.setItem('gd_dailyResults', JSON.stringify(dailyResults));
 
         if (dailyGuesses >= MAX_DAILY_GUESSES) {
-            showDailySummary(); // Show summary if daily challenge completed
+            showDailySummary(); 
         }
     }
 
@@ -589,12 +643,12 @@ function revealAnswer() {
     resultEl.textContent = `${correct ? 'Correct!' : 'Not Quite!'}\nYou guessed: ${guess} — Correct Year: ${correctYear}\n\nSong: ${currentTrack.track}\nDate: ${currentTrack.date}\n${currentTrack.venue}, ${currentTrack.location}`;
     
     updateScore();
-    updateGameModeUI(); // Update UI to reflect daily guesses count
+    updateGameModeUI(); 
 }
 
 function showDailySummary() {
     const modal = document.getElementById('dailySummaryModal');
-    document.getElementById('summaryDate').textContent = `(${getTodayString()})`;
+    document.getElementById('summaryDate').textContent = `(${getFormattedDate(getTodayString())})`;
     const graphicEl = document.getElementById('summaryGraphic');
     const detailsEl = document.getElementById('summaryDetails');
     
@@ -615,8 +669,30 @@ function closeSummaryModal() {
     updateGameModeUI();
     document.getElementById('result').textContent = 'Welcome to Free Play! Press "Next" for a random song.';
     document.getElementById('goButton').textContent = 'Next';
-    // Ensure daily challenge songs are removed from the free play pool for today
     removeDailySongsFromFreePlayPool(); 
+}
+
+function showSessionLog() {
+    const modal = document.getElementById('sessionLogModal');
+    const logContent = document.getElementById('sessionLogContent');
+    
+    if (sessionGuesses.length === 0) {
+        logContent.innerHTML = '<p>No guesses made yet this session.</p>';
+    } else {
+        logContent.innerHTML = sessionGuesses.map((guess, index) => `
+            <div class="session-log-entry">
+                <strong>Guess ${index + 1}:</strong> ${guess.isCorrect ? '✅ Correct' : '❌ Incorrect'}<br>
+                <strong>Song:</strong> ${guess.track}<br>
+                <strong>Your Guess:</strong> ${guess.guessedYear || 'No guess'}<br>
+                <strong>Correct Year:</strong> ${guess.correctYear}
+            </div>
+        `).join('');
+    }
+    modal.style.display = 'block';
+}
+
+function closeSessionLogModal() {
+    document.getElementById('sessionLogModal').style.display = 'none';
 }
 
 function copyShareLink(event, isFromResultModal) {
@@ -625,7 +701,7 @@ function copyShareLink(event, isFromResultModal) {
     if (isFromResultModal && dailyResults.length > 0) {
         const graphic = dailyResults.map(r => r.correct ? '🟩' : '🟥').join('');
         const dailyCorrect = dailyResults.filter(r => r.correct).length;
-        shareText = `DeadGuessr Daily Challenge ${getTodayString()}\nMy Score: ${dailyCorrect}/${MAX_DAILY_GUESSES}\n${graphic}\n\nPlay here: ${window.location.href}`;
+        shareText = `DeadGuessr Daily Challenge ${getFormattedDate(getTodayString())}\nMy Score: ${dailyCorrect}/${MAX_DAILY_GUESSES}\n${graphic}\n\nPlay here: ${window.location.href}`;
     } else {
         shareText = `Check out this "DeadGuessr" game! \n\n${window.location.href}`;
     }
@@ -667,20 +743,17 @@ function startTimer() {
 }
 
 function filterByDecade(decadePrefix) {
-    // Only apply filter if in Free Play mode and after daily challenge has finished for the day
     if (inFreePlayMode) {
-        // Reset to all tracks before filtering to ensure new filter is applied correctly
         availableTracksForSession = [...allTracks];
-        // Ensure daily challenge songs are still excluded if they were played today
         removeDailySongsFromFreePlayPool();
 
         if (decadePrefix) {
             availableTracksForSession = availableTracksForSession.filter(t => t.year.startsWith(decadePrefix));
         }
         document.getElementById('decadeSelect').value = decadePrefix;
-        alert('Decade filter applied for Free Play mode. Press "Next" to get a song from this decade.');
+        document.getElementById('result').textContent = `Filter set to ${decadePrefix ? decadePrefix + '0s' : 'All Decades'} for Free Play. Press "Next" to get a song.`;
     } else {
-        document.getElementById('decadeSelect').value = ''; // Reset selection if daily mode
+        document.getElementById('decadeSelect').value = ''; 
         alert('Decade filtering is only available in Free Play mode after completing the daily challenge.');
     }
 }
