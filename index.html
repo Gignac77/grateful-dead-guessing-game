@@ -342,6 +342,22 @@
     .scoring-system-content strong {
         color: #ffc107;
     }
+
+    /* New styles for the scoring info modal */
+    #scoringInfoModal .modal-content {
+        max-width: 450px; /* Smaller width for this specific modal */
+    }
+    #scoringInfoModal .modal-content p {
+        margin-bottom: 0.8em;
+    }
+    #scoringInfoModal .modal-content strong {
+        color: #ffc107;
+    }
+    #scoringInfoModal .modal-content small {
+        display: block; /* Ensures small text is on its own line */
+        margin-top: 0.2em;
+        color: #bbb;
+    }
   </style>
 </head>
 <body>
@@ -391,20 +407,10 @@
 
     <p id="result" class="neutral"></p>
     <p id="songInfoDisplay"></p> <!-- New element to display song info -->
-    <p id="score">Session Score: 0 | Highest Score: 0 | Streak: 0</p>
+    <p id="score">Session Score: 0 | Highest Score: 0 | Perfect Guess Streak: 0</p>
 
-    <!-- New Scoring System Tab -->
-    <details class="scoring-system-container">
-        <summary>Scoring System</summary>
-        <div class="scoring-system-content">
-            <p><strong>100 Points: Perfect Guess</strong> (0 years off)</p>
-            <p><strong>75 Points: Very Close</strong> ($\pm1$ year off)</p>
-            <p><strong>50 Points: Close Guess</strong> ($\pm2$ years off)</p>
-            <p><strong>25 Points: Era Match</strong> ($\pm3$ to $\pm5$ years off)</p>
-            <p><strong>0 Points: Incorrect</strong> (more than 5 years off)</p>
-            <p>Your "Session Score" tracks points in the current play session. "Highest Score" is your all-time best session score.</p>
-        </div>
-    </details>
+    <!-- New Scoring System Button to open modal -->
+    <button class="small-button reveal" onclick="showScoringInfoModal()">How is Scoring Calculated?</button>
 
     <!-- New Daily Challenge Button -->
     <button id="dailyChallengeButton" class="daily-challenge-button" onclick="startDailyChallenge()">Play Daily Challenge</button>
@@ -437,6 +443,23 @@
       <h2>My Overall Stats</h2>
       <div id="statsDetails"></div>
       <button class="modal-button continue" onclick="closeModal('statsModal')">Close</button>
+    </div>
+  </div>
+
+  <!-- Scoring Info Modal -->
+  <div id="scoringInfoModal" class="modal">
+    <div class="modal-content">
+      <span class="modal-close" onclick="closeModal('scoringInfoModal')">&times;</span>
+      <h2>How Scoring Works</h2>
+      <p><strong>100 Points: Perfect Guess</strong><br><small><em>(Exactly 0 years off)</em></small></p>
+      <p><strong>75 Points: Very Close</strong><br><small><em>($\pm1$ year off)</em></small></p>
+      <p><strong>50 Points: Close Guess</strong><br><small><em>($\pm2$ years off)</em></small></p>
+      <p><strong>25 Points: Era Match</strong><br><small><em>($\pm3$ to $\pm5$ years off)</em></small></p>
+      <p><strong>0 Points: Incorrect</strong><br><small><em>(More than 5 years off)</em></small></p>
+      <hr>
+      <p>Your "Session Score" tracks points in the current play session. "Highest Score" is your all-time best score from any single session.</p>
+      <p>All your stats are saved directly in your browser's local storage. If you clear your browser data, your stats will be reset.</p>
+      <button class="modal-button continue" onclick="closeModal('scoringInfoModal')">Got It!</button>
     </div>
   </div>
 
@@ -702,7 +725,7 @@ function updateGameModeUI() {
         decadeSelect.style.display = 'none'; 
         timedOptions.style.display = 'none'; 
         goButton.disabled = false; // Always enabled during daily challenge progress
-        goButton.textContent = (guessesMade === 0 && !currentTrack) ? 'Go' : 'Next';
+        goButton.textContent = 'Go'; // Always "Go" for daily challenge
         dailyChallengeButton.style.display = 'none'; // Hide daily challenge button
         document.getElementById('result').textContent = `Daily Challenge in progress.`;
     } else { // Free Play Mode
@@ -710,7 +733,7 @@ function updateGameModeUI() {
         decadeSelect.style.display = 'block'; 
         timedOptions.style.display = 'flex'; 
         goButton.disabled = false; // Always enabled in free play
-        goButton.textContent = 'Next';
+        goButton.textContent = 'Go'; // Always "Go" for free play
         dailyChallengeButton.style.display = 'block'; // Show daily challenge button
         if (dailyGuessesToday >= DAILY_CHALLENGE_SONG_COUNT) {
             dailyChallengeButton.disabled = true;
@@ -719,7 +742,7 @@ function updateGameModeUI() {
             dailyChallengeButton.disabled = false;
             dailyChallengeButton.textContent = 'Play Daily Challenge';
         }
-        document.getElementById('result').textContent = 'Press "Go" or "Next" for a random song!';
+        document.getElementById('result').textContent = 'Press "Go" for a random song!';
     }
     document.getElementById('songInfoDisplay').textContent = ''; // Clear song info when loading new mode
 }
@@ -955,7 +978,7 @@ function closeDailySummaryAndEnterFreePlay() {
     inDailyChallengeMode = false; // Ensure we are in free play mode
     removeDailySongsFromFreePlayPool(); // Ensure daily songs are excluded from Free Play
     updateGameModeUI(); // Update UI to free play mode
-    document.getElementById('result').textContent = 'Daily Challenge complete! Welcome to Free Play. Press "Next" for a random song.';
+    document.getElementById('result').textContent = 'Daily Challenge complete! Welcome to Free Play. Press "Go" for a random song.';
 }
 
 
@@ -1044,7 +1067,7 @@ function showStatsModal() {
         <p><strong>Close Guesses:</strong> ${lifetimeCloseGuesses} <br><small><em>($\pm1$ or $\pm2$ years off)</em></small></p>
         <p><strong>Era Matches:</strong> ${lifetimeEraMatches} <br><small><em>($\pm3$ to $\pm5$ years off)</em></small></p>
         <p><strong>Overall Success Rate (Perfect + Close + Era):</strong> ${overallSuccessRate}%</p>
-        <p><strong>Highest Streak:</strong> ${lifetimeHighestStreak}</p>
+        <p><strong>Highest Perfect Guess Streak:</strong> ${lifetimeHighestStreak}</p>
         <p><strong>Average Year Difference (when not perfect):</strong> ${averageDifference} years</p>
         <p><strong>Most Common Incorrect Decade:</strong> ${mostCommonIncorrectDecade}</p>
         <p><em>(Stats are updated after each guess and saved in your browser.)</em></p>
@@ -1090,6 +1113,10 @@ function closeModal(modalId) {
     document.getElementById(modalId).style.display = 'none';
 }
 
+function showScoringInfoModal() {
+    document.getElementById('scoringInfoModal').style.display = 'block';
+}
+
 function copyShareLink(event, isFromResultModal) {
     event.preventDefault();
     let shareText;
@@ -1131,7 +1158,7 @@ function updateScoreDisplay() {
     localStorage.setItem('gd_lifetimeHighestStreak', lifetimeHighestStreak);
 
 
-    document.getElementById('score').textContent = `Session Score: ${sessionPoints} | Highest Score: ${siteHighestScore} | Streak: ${currentStreak}`;
+    document.getElementById('score').textContent = `Session Score: ${sessionPoints} | Highest Score: ${siteHighestScore} | Perfect Guess Streak: ${currentStreak}`;
 }
 
 function toggleTimedMode(btn) {
@@ -1187,7 +1214,7 @@ function filterByDecade(decadePrefix) {
         availableTracksForSession = availableTracksForSession.filter(t => t.year.startsWith(decadePrefix));
     }
     document.getElementById('decadeSelect').value = decadePrefix;
-    document.getElementById('result').textContent = `Filter set to ${decadePrefix ? decadePrefix + '0s' : 'All Decades'} for Free Play. Press "Next" to get a song.`;
+    document.getElementById('result').textContent = `Filter set to ${decadePrefix ? decadePrefix + '0s' : 'All Decades'} for Free Play. Press "Go" to get a song.`;
     // Clear current track if a filter is applied in middle of a guess
     document.getElementById('audio').pause();
     document.getElementById('audio').removeAttribute('src');
