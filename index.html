@@ -4,13 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>DeadGuessr</title>
-  <link href="[https://fonts.googleapis.com/css2?family=Comic+Neue&display=swap](https://fonts.googleapis.com/css2?family=Comic+Neue&display=swap)" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Comic+Neue&display=swap" rel="stylesheet">
   <style>
     body {
       font-family: 'Comic Neue', cursive;
       text-align: center;
       padding: 2em;
-      background: url('[https://cdn.mos.cms.futurecdn.net/HuGGeENt6kGyixe3hT9tnY.jpg](https://cdn.mos.cms.futurecdn.net/HuGGeENt6kGyixe3hT9tnY.jpg)');
+      background: url('https://cdn.mos.cms.futurecdn.net/HuGGeENt6kGyixe3hT9tnY.jpg');
       background-color: #111;
       color: #eee;
       margin: 0;
@@ -107,10 +107,10 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        gap: 0.5em; /* Space between timed button, select, and timer display */
+        /* margin-top is handled by parent .controls-group */
     }
     .timed-options select {
-        margin-left: 0; /* Remove margin from select */
+        margin-left: 0.5em;
         margin-top: 0;
     }
 
@@ -205,34 +205,14 @@
       color: white;
       font-style: italic;
     }
-    /* Updated Timer Display Styles */
-    .live-timer-display {
-        background-color: rgba(0, 0, 0, 0.7);
-        border: 1px solid #9933cc;
-        border-radius: 0.5em;
-        padding: 0.6em 0.8em;
-        font-size: 1.2em;
-        color: #00ff88;
-        font-weight: bold;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 60px; /* Ensure consistent width */
-        height: 3em; /* Match button height */
-        box-sizing: border-box;
-        position: relative;
-        overflow: hidden;
-        display: none; /* Hidden by default */
-    }
-    .live-timer-bar {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        height: 5px;
-        background: linear-gradient(to right, #00ff88, #ff0000);
-        width: 100%;
-        transition: width 1s linear;
-        border-radius: 0 0 0.5em 0.5em;
+    #timerBar {
+      width: 100%;
+      height: 10px;
+      background: linear-gradient(to right, #00ff88, #ff0000);
+      transition: width 1s linear;
+      margin-top: 1em;
+      border-radius: 1em;
+      display: none; /* Hidden by default, only shown when timed mode active */
     }
     @keyframes glow {
       0% { text-shadow: 0 0 5px #00ff88; }
@@ -364,6 +344,7 @@
     .summary-block.close { background-color: #ffc107; }    /* Yellow/Orange */
     .summary-block.miss { background-color: #dc3545; }     /* Red */
 
+
     #summaryDetails, #statsDetails {
         text-align: left;
         white-space: pre-wrap;
@@ -454,20 +435,6 @@
         margin-top: 0.2em;
         color: #bbb;
     }
-    /* Daily Summary Modal Title Flair */
-    #dailySummaryModal h2 {
-        font-size: 1.8em;
-        color: #ffc107; /* Orange/Yellow for main title */
-        margin-bottom: 0.5em;
-    }
-    #dailySummaryModal .modal-content .lyric-snippet {
-        font-style: italic;
-        font-size: 1.1em;
-        color: #00ff88; /* Green for lyric */
-        margin-top: -0.5em; /* Pull it closer to the title */
-        margin-bottom: 1em;
-        text-shadow: 0 0 5px rgba(0,255,136,0.5); /* Subtle glow */
-    }
   </style>
 </head>
 <body>
@@ -511,12 +478,10 @@
                 <option value="45">45s</option>
                 <option value="60">60s</option>
             </select>
-            <div id="liveTimerDisplay" class="live-timer-display">
-                <span id="timerCountdown"></span>
-                <div class="live-timer-bar"></div>
-            </div>
         </div>
     </div>
+
+    <div id="timerBar"></div>
     
     <div id="gameModeIndicator"></div> <p id="result" class="neutral"></p>
     <p id="songInfoDisplay"></p> <p id="score">Session Score: <span id="sessionScoreValue">0</span> | Highest Score: <span id="highestScoreValue">0</span> | Perfect Guess Streak: <span id="streakValue">0</span></p>
@@ -525,7 +490,7 @@
 
     <button id="dailyChallengeButton" class="daily-challenge-button" onclick="startDailyChallenge()">Play Daily Challenge</button>
 
-    <a href="[https://www.gofundme.com/f/our-friend-betty-cantorjackson-could-use-our-help](https://www.gofundme.com/f/our-friend-betty-cantorjackson-could-use-our-help)" target="_blank" class="donate">🌸 Donate to Betty</a>
+    <a href="https://www.gofundme.com/f/our-friend-betty-cantorjackson-could-use-our-help" target="_blank" class="donate">🌸 Donate to Betty</a>
     <br />
     <a class="share" href="#" onclick="copyShareLink(event, false)">🔗 Share The Fun</a>
     <button id="viewStatsButton" class="reveal small-button" onclick="showStatsModal()">View My Stats</button>
@@ -535,8 +500,7 @@
   <div id="dailySummaryModal" class="modal">
     <div class="modal-content">
       <span class="modal-close" onclick="closeModal('dailySummaryModal')">&times;</span>
-      <h2>DeadGuessr Daily Challenge <span id="summaryDate" style="color: #ffc107;"></span></h2>
-      <p id="dailySummaryLyric" class="lyric-snippet"></p>
+      <h2>Daily Results <span id="summaryDate" style="color: #ffc107;"></span></h2>
       <div id="summaryGraphic"></div> <hr>
       <div id="summaryDetails"></div> <button class="modal-button" onclick="copyShareLink(event, true)">Share Your Results</button>
       <button class="modal-button continue" onclick="closeDailySummaryAndEnterFreePlay()">Continue to Free Play</button>
@@ -594,18 +558,6 @@ let inDailyChallengeMode = false; // Flag to indicate if currently playing Daily
 // Stores an array of guess objects: { timestamp, track, correctYear, guessedYear, points, diff, venue, location }
 let lifetimeGuessHistory = JSON.parse(localStorage.getItem('gd_lifetimeGuessHistory')) || [];
 const MAX_HISTORY_ENTRIES = 1000; // Cap history to prevent excessive localStorage usage
-
-// --- LYRIC SNIPPETS FOR DAILY SUMMARY ---
-const lyricSnippets = [
-    "Ripple in still water...",
-    "Built to last, or so I've been told.",
-    "A box of rain will ease the pain...",
-    "Like a road, that goes on forever...",
-    "Such a long, long time to be gone...",
-    "The music never stopped.",
-    "Let there be songs to fill the air."
-];
-
 
 // --- HELPER FUNCTIONS ---
 
@@ -871,8 +823,6 @@ function updateGameModeUI() {
             dailyChallengeButton.onclick = startDailyChallenge; // Reset click handler
         }
     }
-    // Ensure timer display is hidden when not in timed mode
-    document.getElementById('liveTimerDisplay').style.display = timedMode && !inDailyChallengeMode ? 'flex' : 'none';
 }
 
 /**
@@ -881,8 +831,7 @@ function updateGameModeUI() {
 function loadTrack() {
     // Clear any existing timer and hide the bar when a new track loads
     clearInterval(timer); 
-    document.getElementById('liveTimerDisplay').style.display = 'none'; // Hide the timer display
-    document.getElementById('liveTimerBar').style.width = '100%'; // Reset bar width
+    document.getElementById('timerBar').style.display = 'none'; 
 
     let track;
     if (inDailyChallengeMode) {
@@ -944,7 +893,7 @@ function revealAnswer() {
     if (!currentTrack || answerRevealed) return;
     answerRevealed = true;
     clearInterval(timer);
-    document.getElementById('liveTimerDisplay').style.display = 'none'; // Hide the timer display
+    document.getElementById('timerBar').style.display = 'none';
     document.getElementById('checkButton').disabled = true;
 
     // Show year input guidance after the first guess, only once per session in Free Play
@@ -1085,13 +1034,7 @@ function showDailySummary() {
     document.getElementById('summaryDate').textContent = `(${getLongFormattedDate(getTodayString())})`; // Use long format for modal title
     const graphicEl = document.getElementById('summaryGraphic');
     const detailsEl = document.getElementById('summaryDetails');
-    const lyricEl = document.getElementById('dailySummaryLyric');
     
-    // Select a random lyric snippet
-    const randomLyric = lyricSnippets[Math.floor(Math.random() * lyricSnippets.length)];
-    lyricEl.textContent = `"${randomLyric}"`;
-
-
     let dailyPerfectCount = dailyResults.filter(r => r.correct).length;
     let dailyCloseCount = dailyResults.filter(r => r.close || r.era).length; // Combine close and era for the graphic
     let dailyMissCount = dailyResults.filter(r => r.points === 0).length;
@@ -1363,9 +1306,7 @@ function copyShareLink(event, isFromResultModal) {
         const dailyClose = dailyResults.filter(r => r.close).length;
         const dailyEra = dailyResults.filter(r => r.era).length;
 
-        const randomLyric = lyricSnippets[Math.floor(Math.random() * lyricSnippets.length)];
-
-        shareText = `DeadGuessr Daily Challenge ${getLongFormattedDate(getTodayString())}\n"${randomLyric}"\nMy Round Score: ${totalDailyPoints} points! (${dailyPerfect} Perfect, ${dailyClose} Close, ${dailyEra} Era)\n${graphic}\n\nPlay here: ${window.location.href}`;
+        shareText = `DeadGuessr Daily Challenge ${getLongFormattedDate(getTodayString())}\nMy Round Score: ${totalDailyPoints} points! (${dailyPerfect} Perfect, ${dailyClose} Close, ${dailyEra} Era)\n${graphic}\n\nPlay here: ${window.location.href}`;
     } else {
         shareText = `I'm testing my Dead knowledge on DeadGuessr! Come play along and guess the year: ${window.location.href}`;
     }
@@ -1433,41 +1374,33 @@ function toggleTimedMode(btn) {
     timedMode = !timedMode;
     btn.classList.toggle('active', timedMode);
     const timedDurationSelect = document.getElementById('timedDurationSelect');
-    const liveTimerDisplay = document.getElementById('liveTimerDisplay');
 
     if (timedMode) {
         timedDurationSelect.style.display = 'inline-block'; 
-        liveTimerDisplay.style.display = 'flex'; // Show the timer display
         initialTimeLimit = parseInt(timedDurationSelect.value); 
         timeLeft = initialTimeLimit; 
         if (!answerRevealed && currentTrack) startTimer(); 
-        document.getElementById('timerCountdown').textContent = timeLeft; // Initial display
     } else {
         timedDurationSelect.style.display = 'none'; 
-        liveTimerDisplay.style.display = 'none'; // Hide the timer display
         clearInterval(timer);
+        document.getElementById('timerBar').style.display = 'none';
     }
 }
 
 function startTimer() {
     clearInterval(timer); 
     timeLeft = initialTimeLimit; 
-    const liveTimerDisplay = document.getElementById('liveTimerDisplay');
-    const timerBar = liveTimerDisplay.querySelector('.live-timer-bar');
-    const timerCountdown = document.getElementById('timerCountdown');
-
-    liveTimerDisplay.style.display = 'flex'; // Ensure timer display is visible
-    timerBar.style.width = '100%';
-    timerCountdown.textContent = timeLeft;
+    const bar = document.getElementById('timerBar');
+    bar.style.display = 'block';
+    bar.style.width = '100%';
 
     timer = setInterval(() => {
         timeLeft--;
-        timerCountdown.textContent = timeLeft;
-        timerBar.style.width = `${(timeLeft / initialTimeLimit) * 100}%`; 
+        bar.style.width = `${(timeLeft / initialTimeLimit) * 100}%`; 
         if (timeLeft <= 0) {
             clearInterval(timer);
             if(!answerRevealed) revealAnswer();
-            liveTimerDisplay.style.display = 'none'; // Hide timer display on completion
+            bar.style.display = 'none';
         }
     }, 1000);
 }
@@ -1497,10 +1430,6 @@ function filterByDecade(decadePrefix) {
     document.getElementById('goButton').textContent = 'Go'; // Reset button to 'Go' when filter changes
     document.getElementById('yearInputGuidance').style.display = 'none'; // Hide guidance
     hasGuessedOnceThisSession = false; // Reset guidance flag for new filter
-    
-    // Ensure timer display is hidden if not in timed mode
-    document.getElementById('liveTimerDisplay').style.display = timedMode ? 'flex' : 'none';
-    clearInterval(timer); // Clear any running timer
 }
 
 document.addEventListener('keydown', function(event) {
@@ -1512,7 +1441,7 @@ document.addEventListener('keydown', function(event) {
 </script>
 
 <footer style="font-size: 0.8em; text-align: center; margin-top: 2em; color: #ccc;">
-  <a href="[https://github.com/Gignac77](https://github.com/Gignac77)" target="_blank" rel="noopener noreferrer" style="color: #ccc; text-decoration: none;">
+  <a href="https://github.com/Gignac77" target="_blank" rel="noopener noreferrer" style="color: #ccc; text-decoration: none;">
     Built with Love by Matt
   </a>
 </footer>
