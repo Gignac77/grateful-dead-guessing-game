@@ -107,7 +107,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        margin-top: 1em;
+        /* margin-top is handled by parent .controls-group */
     }
     .timed-options select {
         margin-left: 0.5em;
@@ -154,15 +154,21 @@
     #result {
       margin-top: 1em;
       font-weight: bold;
-      font-size: 1.5em;
+      font-size: 1.5em; /* Consistent font size for result and song info */
       white-space: pre-line;
       min-height: 3em;
     }
-    #songInfoDisplay { /* New style for song info display */
-        font-size: 1em;
+    #songInfoDisplay {
+        font-size: 1.5em; /* Match #result font size */
         color: #ddd;
         margin-top: 0.5em;
         white-space: pre-line;
+    }
+    #yearInputGuidance { /* Style for the new guidance text */
+        font-size: 0.8em;
+        color: #aaa;
+        margin-top: 0.5em;
+        display: none; /* Hidden by default */
     }
     .correct {
       color: #00ff88;
@@ -189,6 +195,11 @@
       padding: 1em;
       border-radius: 1em;
     }
+    #score span { /* Style for animating score numbers */
+        display: inline-block;
+        min-width: 20px; /* Prevent reflow during animation */
+        text-align: center;
+    }
     #thankYou {
       margin-top: 0.5em;
       color: white;
@@ -213,11 +224,51 @@
       70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
       100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
     }
-    select, button:not(.generate):not(.donate):not(.share) {
-      display: block;
-      margin-left: auto;
-      margin-right: auto;
+    
+    /* Centering and uniform sizing for controls */
+    .controls-group {
+        display: flex;
+        justify-content: center;
+        align-items: center; /* Vertically align items */
+        flex-wrap: wrap; /* Allow wrapping on smaller screens */
+        gap: 1em; /* Space between elements */
+        margin-top: 1em; /* Adjust margin as needed */
     }
+
+    .controls-group select,
+    .timed-options button,
+    .timed-options select {
+        padding: 0.6em 1.2em; /* Match button padding for vertical size */
+        font-size: 1.2em; /* Ensure consistent font size */
+        border-radius: 0.5em; /* Consistent with buttons */
+        border: none; /* Remove default select border */
+        appearance: none; /* Remove default select arrow on some browsers */
+        background-color: #444; /* Darker background for consistency */
+        color: white; /* White text */
+        min-width: 100px; /* Ensure a minimum width */
+        height: 3em; /* Explicit height to unify vertical size, adjust as needed */
+        box-sizing: border-box; /* Include padding/border in height */
+        cursor: pointer;
+        font-family: 'Comic Neue', cursive;
+        font-weight: bold;
+        text-align: center; /* Center text in dropdown */
+        text-align-last: center; /* For Firefox */
+    }
+
+    /* Custom arrow for select element when appearance: none is used */
+    .controls-group select {
+        background-image: linear-gradient(45deg, transparent 50%, white 50%),
+                          linear-gradient(135deg, white 50%, transparent 50%),
+                          linear-gradient(to right, #444, #444);
+        background-position: calc(100% - 15px) calc(1em + 2px), /* Arrow top */
+                             calc(100% - 10px) calc(1em + 2px), /* Arrow bottom */
+                             100% 0; /* Background for arrow area */
+        background-size: 5px 5px,
+                         5px 5px,
+                         2.5em 2.5em;
+        background-repeat: no-repeat;
+    }
+
     #gameModeIndicator {
         font-size: 1.1em;
         margin-top: 1em;
@@ -294,6 +345,7 @@
         width: 100%;
         border-collapse: collapse;
         margin-top: 1em;
+        margin-bottom: 1em;
     }
     #statsDetails th, #statsDetails td {
         border: 1px solid rgba(255,255,255,0.2);
@@ -377,34 +429,37 @@
     <br />
 
     <input type="text" id="yearGuess" placeholder="Year" maxlength="4" autocomplete="off" />
+    <p id="yearInputGuidance">Tip: You can use two digits (e.g., '72' for 1972)!</p>
     <br />
 
     <button id="checkButton" class="reveal" onclick="revealAnswer()">Check Answer</button>
     <br />
 
-    <select id="decadeSelect" onchange="filterByDecade(this.value)">
-      <option value="">All Decades</option>
-      <option value="196">1960s</option>
-      <option value="197">1970s</option>
-      <option value="198">1980s</option>
-      <option value="199">1990s</option>
-    </select>
-    
-    <div class="timed-options">
-        <button class="timed" onclick="toggleTimedMode(this)">Timed Mode</button>
-        <select id="timedDurationSelect">
-            <option value="10">10s</option>
-            <option value="20" selected>20s</option>
-            <option value="30">30s</option>
-            <option value="45">45s</option>
-            <option value="60">60s</option>
+    <div class="controls-group">
+        <select id="decadeSelect" onchange="filterByDecade(this.value)">
+            <option value="">All Decades</option>
+            <option value="196">1960s</option>
+            <option value="197">1970s</option>
+            <option value="198">1980s</option>
+            <option value="199">1990s</option>
         </select>
+        
+        <div class="timed-options">
+            <button class="timed" onclick="toggleTimedMode(this)">Timed Mode</button>
+            <select id="timedDurationSelect">
+                <option value="10">10s</option>
+                <option value="20" selected>20s</option>
+                <option value="30">30s</option>
+                <option value="45">45s</option>
+                <option value="60">60s</option>
+            </select>
+        </div>
     </div>
 
     <div id="timerBar"></div>
     
     <div id="gameModeIndicator"></div> <p id="result" class="neutral"></p>
-    <p id="songInfoDisplay"></p> <p id="score">Session Score: 0 | Highest Score: 0 | Perfect Guess Streak: 0</p>
+    <p id="songInfoDisplay"></p> <p id="score">Session Score: <span id="sessionScoreValue">0</span> | Highest Score: <span id="highestScoreValue">0</span> | Perfect Guess Streak: <span id="streakValue">0</span></p>
 
     <button class="small-button reveal" onclick="showScoringInfoModal()">How is Scoring Calculated?</button>
 
@@ -443,9 +498,9 @@
       <span class="modal-close" onclick="closeModal('scoringInfoModal')">&times;</span>
       <h2>How Scoring Works</h2>
       <p><strong>100 Points: Perfect Guess</strong><br><small><em>(Exactly 0 years off)</em></small></p>
-      <p><strong>75 Points: Very Close</strong><br><small><em>(1 year off)</em></small></p>
-      <p><strong>50 Points: Close Guess</strong><br><small><em>(2 years off)</em></small></p>
-      <p><strong>25 Points: Era Match</strong><br><small><em>(3 to 5 years off)</em></small></p>
+      <p><strong>75 Points: Very Close</strong><br><small><em>($\pm1$ year off)</em></small></p>
+      <p><strong>50 Points: Close Guess</strong><br><small><em>($\pm2$ years off)</em></small></p>
+      <p><strong>25 Points: Era Match</strong><br><small><em>($\pm3$ to $\pm5$ years off)</em></small></p>
       <p><strong>0 Points: Incorrect</strong><br><small><em>(More than 5 years off)</em></small></p>
       <hr>
       <p>Your "Session Score" tracks points in the current play session. "Highest Score" is your all-time best score from any single session.</p>
@@ -456,7 +511,6 @@
 
 <script>
 let currentTrack = null;
-let totalSessionGuesses = 0; // Tracks total guesses in current browser session (Free Play)
 let sessionPoints = 0; // Points for current browser session (Free Play)
 let currentStreak = 0; // Current streak of perfect guesses
 let siteHighestScore = parseInt(localStorage.getItem('gd_site_highest_score')) || 0; // All-time highest session points
@@ -467,6 +521,7 @@ let timer = null;
 let initialTimeLimit = 20; 
 let timeLeft = initialTimeLimit; 
 let answerRevealed = false;
+let hasGuessedOnce = false; // To control year input guidance visibility
 
 // --- GAME MODE GLOBAL VARIABLES ---
 const DAILY_CHALLENGE_SONG_COUNT = 5;
@@ -599,7 +654,8 @@ function checkDailyStatus() {
             // Daily challenge completed for today, user starts in Free Play
             inDailyChallengeMode = false; 
             document.getElementById('dailyChallengeButton').disabled = true;
-            document.getElementById('dailyChallengeButton').textContent = 'Daily Challenge Results'; // Changed text here
+            document.getElementById('dailyChallengeButton').textContent = 'Daily Challenge Results'; 
+            document.getElementById('dailyChallengeButton').onclick = showDailySummary; // Make button show summary
         } else {
             // Daily challenge not completed, user starts in Free Play by default
             inDailyChallengeMode = false; 
@@ -614,9 +670,9 @@ function checkDailyStatus() {
         inDailyChallengeMode = false; // New day starts in Free Play
         document.getElementById('dailyChallengeButton').disabled = false;
         document.getElementById('dailyChallengeButton').textContent = 'Play Daily Challenge';
+        document.getElementById('dailyChallengeButton').onclick = startDailyChallenge; // Reset click handler
         
         // Don't reset sessionPoints or currentStreak here, those persist across daily/freeplay
-        // Only reset them when starting a new "game" or round logic.
     }
     // Always reset availableTracksForSession for Free Play to include all non-daily songs
     availableTracksForSession = [...allTracks]; 
@@ -640,7 +696,8 @@ function startDailyChallenge() {
 
     document.getElementById('dailyChallengeButton').disabled = true; // Disable once started
     document.getElementById('dailyChallengeButton').textContent = 'Daily Challenge In Progress';
-    document.getElementById('goButton').textContent = 'Go'; // Reset for first song
+    document.getElementById('dailyChallengeButton').onclick = null; // Disable click for in-progress
+    document.getElementById('goButton').textContent = 'Go'; 
     updateGameModeUI();
     loadTrack(); // Load the first track of the daily challenge
 }
@@ -683,6 +740,7 @@ function getTodaysUniversalSongs() {
 
         localStorage.setItem('gd_globalSongQueue', JSON.stringify(globalQueue));
         localStorage.setItem('gd_globalQueueIndex', globalQueueIndex.toString());
+        localStorage.setItem('gd_globalQueueIndex', globalQueueIndex.toString());
         localStorage.setItem('gd_lastQueueShuffleDate', today); 
     }
     
@@ -711,7 +769,6 @@ function updateGameModeUI() {
 
     if (inDailyChallengeMode) {
         const guessesMade = dailyGuessesToday;
-        // This text is now handled directly by loadTrack and revealAnswer to show song info
         indicator.textContent = `Daily Challenge: Song ${guessesMade + 1}/${DAILY_CHALLENGE_SONG_COUNT}`;
         indicator.style.display = 'block'; 
         decadeSelect.style.display = 'none'; 
@@ -719,25 +776,30 @@ function updateGameModeUI() {
         goButton.disabled = false; // Always enabled during daily challenge progress
         goButton.textContent = 'Go'; // Always "Go"
         dailyChallengeButton.style.display = 'none'; // Hide daily challenge button
-        // No default text here, actual song info is set by loadTrack
     } else { // Free Play Mode
         indicator.style.display = 'none'; // Hide game mode indicator in Free Play
         decadeSelect.style.display = 'block'; 
         timedOptions.style.display = 'flex'; 
         goButton.disabled = false; // Always enabled in free play
-        goButton.textContent = 'Go'; // Always "Go"
+        // Button text changes to "Next Song" or "Play Again" in revealAnswer for Free Play.
+        // It's "Go" when no song is loaded yet or after daily challenge completes.
+        if (!currentTrack || answerRevealed) { // If no song loaded or after a guess in free play
+            goButton.textContent = 'Go';
+        } else { // If a song is loaded but not yet guessed (e.g., initial state)
+             goButton.textContent = 'Go';
+        }
+
         dailyChallengeButton.style.display = 'block'; // Show daily challenge button
         if (dailyGuessesToday >= DAILY_CHALLENGE_SONG_COUNT) {
-            dailyChallengeButton.disabled = true;
-            dailyChallengeButton.textContent = 'Daily Challenge Results'; // Changed text here
+            dailyChallengeButton.disabled = false; // Enable to click for results
+            dailyChallengeButton.textContent = 'Daily Challenge Results'; 
+            dailyChallengeButton.onclick = showDailySummary; // Make button show summary
         } else {
             dailyChallengeButton.disabled = false;
             dailyChallengeButton.textContent = 'Play Daily Challenge';
+            dailyChallengeButton.onclick = startDailyChallenge; // Reset click handler
         }
-        // No default text here, actual song info is set by loadTrack
     }
-    // songInfoDisplay is NOT cleared here to ensure it persists after a guess in any mode
-    // It's cleared in loadTrack when a new song starts.
 }
 
 /**
@@ -794,6 +856,9 @@ function loadTrack() {
     document.getElementById('checkButton').disabled = false;
     document.getElementById('songInfoDisplay').textContent = ''; // Clear previous song info
 
+    // Hide year input guidance when a new song starts
+    document.getElementById('yearInputGuidance').style.display = 'none';
+
     if (timedMode) startTimer(); // Start/reset timer when new song loads
 }
 
@@ -804,6 +869,10 @@ function revealAnswer() {
     document.getElementById('timerBar').style.display = 'none';
     document.getElementById('checkButton').disabled = true;
 
+    // Show year input guidance after the first guess
+    hasGuessedOnce = true;
+    document.getElementById('yearInputGuidance').style.display = 'block';
+
     let guessInput = document.getElementById('yearGuess').value.trim();
     let guessedYearNum = parseInt(guessInput, 10);
     let displayGuess = guessInput; // What we show to the user
@@ -811,7 +880,7 @@ function revealAnswer() {
     // Handle 2-digit year input for display only, still use 4-digit for calculation
     if (/^\d{2}$/.test(guessInput)) {
         guessedYearNum = (guessedYearNum >= 65 && guessedYearNum <= 99 ? 1900 : 2000) + guessedYearNum;
-        displayGuess = guessedYearNum.toString();
+        displayGuess = guessInput; // Keep 2-digit for display if that was input
     } else if (!/^\d{4}$/.test(guessInput) || isNaN(guessedYearNum)) {
         guessedYearNum = null; // No valid guess
         displayGuess = 'No guess';
@@ -920,13 +989,15 @@ function revealAnswer() {
     resultEl.className = resultClass;
     resultEl.textContent = `${message}\nYour Guess: ${displayGuess} — Correct Year: ${currentTrack.year}\nPoints: ${pointsEarned}`;
     
-    // Display song info separately - THIS IS THE PRIMARY CHANGE LOCATION
-    // This text now always shows under the result.
+    // Display song info separately
     document.getElementById('songInfoDisplay').textContent = `Song: ${currentTrack.track}\nDate: ${currentTrack.date}\n${currentTrack.venue}, ${currentTrack.location}`;
 
     updateScoreDisplay();
-    // updateGameModeUI() is deliberately NOT called here to avoid clearing songInfoDisplay right after it's set.
-    // It's called when changing modes or loading a new track.
+
+    // Change "Go" button to "Next Song" or "Play Again" in Free Play after a guess
+    if (!inDailyChallengeMode) {
+        document.getElementById('goButton').textContent = 'Next Song';
+    }
 }
 
 function showDailySummary() {
@@ -973,8 +1044,9 @@ function closeDailySummaryAndEnterFreePlay() {
     inDailyChallengeMode = false; // Ensure we are in free play mode
     removeDailySongsFromFreePlayPool(); // Ensure daily songs are excluded from Free Play
     updateGameModeUI(); // Update UI to free play mode
-    // No "Press Go" reminder here, as song info will appear after first Free Play 'Go' click
-    document.getElementById('result').textContent = 'Daily Challenge complete! Welcome to Free Play. Press "Go" for a random song.'; // Initial Free Play message
+    document.getElementById('goButton').textContent = 'Go'; // Reset button to 'Go' for new Free Play session
+    document.getElementById('result').textContent = 'Daily Challenge complete! Welcome to Free Play.';
+    document.getElementById('songInfoDisplay').textContent = ''; // Clear song info if coming from daily summary
 }
 
 
@@ -987,6 +1059,7 @@ function showStatsModal() {
     const lifetimePerfectGuesses = lifetimeGuessHistory.filter(g => g.points === 100).length;
     const lifetimeCloseGuesses = lifetimeGuessHistory.filter(g => g.points === 75 || g.points === 50).length;
     const lifetimeEraMatches = lifetimeGuessHistory.filter(g => g.points === 25).length;
+    const lifetimeIncorrect = lifetimeGuessHistory.filter(g => g.points === 0).length;
     
     const perfectAccuracy = totalGames > 0 ? ((lifetimePerfectGuesses / totalGames) * 100).toFixed(1) : 0;
     const overallSuccessRate = totalGames > 0 ? (((lifetimePerfectGuesses + lifetimeCloseGuesses + lifetimeEraMatches) / totalGames) * 100).toFixed(1) : 0;
@@ -1055,19 +1128,83 @@ function showStatsModal() {
     }, {});
     const sortedVenues = Object.keys(venueBreakdown).sort((a,b) => venueBreakdown[b].points - venueBreakdown[a].points); // Sort by points descending
 
+    // Guess Distribution Calculation
+    const distribution = {
+        '100 Points': lifetimePerfectGuesses,
+        '75 Points': lifetimeGuessHistory.filter(g => g.points === 75).length,
+        '50 Points': lifetimeGuessHistory.filter(g => g.points === 50).length,
+        '25 Points': lifetimeGuessHistory.filter(g => g.points === 25).length,
+        '0 Points': lifetimeIncorrect
+    };
+    let distributionHtml = '<h3>Guess Distribution</h3>';
+    if (totalGames > 0) {
+        for (const [category, count] of Object.entries(distribution)) {
+            const percentage = ((count / totalGames) * 100).toFixed(1);
+            distributionHtml += `<p>${category}: ${count} (${percentage}%)</p>`;
+        }
+    } else {
+        distributionHtml += '<p>No guesses yet to show distribution.</p>';
+    }
+
+    // Top 5 Most Guessed Songs (Correctly/Incorrectly)
+    const songAccuracy = {}; // { 'Song Name': { correctCount: 0, incorrectCount: 0, totalCount: 0 } }
+    lifetimeGuessHistory.forEach(guess => {
+        const songKey = `${guess.track} (${guess.correctYear})`;
+        songAccuracy[songKey] = songAccuracy[songKey] || { correctCount: 0, incorrectCount: 0, totalCount: 0 };
+        songAccuracy[songKey].totalCount++;
+        if (guess.points === 100) {
+            songAccuracy[songKey].correctCount++;
+        } else if (guess.points === 0) {
+            songAccuracy[songKey].incorrectCount++;
+        }
+    });
+
+    const sortedByCorrect = Object.entries(songAccuracy)
+        .sort(([,a], [,b]) => b.correctCount - a.correctCount || b.totalCount - a.totalCount)
+        .slice(0, 5);
+
+    const sortedByIncorrect = Object.entries(songAccuracy)
+        .sort(([,a], [,b]) => b.incorrectCount - a.incorrectCount || b.totalCount - a.totalCount)
+        .slice(0, 5);
+
+    let topSongsHtml = '<h3>Top Songs</h3>';
+    if (lifetimeGuessHistory.length > 0) {
+        topSongsHtml += `
+            <h4>Most Guessed Correctly:</h4>
+            <table>
+                <thead><tr><th>Song</th><th>Correct Guesses</th></tr></thead>
+                <tbody>
+                    ${sortedByCorrect.map(([song, data]) => `<tr><td>${song}</td><td>${data.correctCount}</td></tr>`).join('')}
+                </tbody>
+            </table>
+            <h4>Most Guessed Incorrectly:</h4>
+            <table>
+                <thead><tr><th>Song</th><th>Incorrect Guesses</th></tr></thead>
+                <tbody>
+                    ${sortedByIncorrect.map(([song, data]) => `<tr><td>${song}</td><td>${data.incorrectCount}</td></tr>`).join('')}
+                </tbody>
+            </table>
+        `;
+    } else {
+        topSongsHtml += '<p>No songs guessed yet to show top lists.</p>';
+    }
+
+
     let statsHtml = `
         <h3>Overall Performance</h3>
         <p><strong>Total Games Played:</strong> ${totalGames}</p>
         <p><strong>Total Points Earned:</strong> ${totalLifetimePoints}</p>
-        <p><strong>Perfect Guesses:</strong> ${lifetimePerfectGuesses} (${perfectAccuracy}%) <br><small><em>(0 years off)</em></small></p>
-        <p><strong>Close Guesses:</strong> ${lifetimeCloseGuesses} <br><small><em>($\pm1$ or $\pm2$ years off)</em></small></p>
-        <p><strong>Era Matches:</strong> ${lifetimeEraMatches} <br><small><em>($\pm3$ to $\pm5$ years off)</em></small></p>
-        <p><strong>Overall Success Rate (Perfect + Close + Era):</strong> ${overallSuccessRate}%</p>
         <p><strong>Highest Perfect Guess Streak:</strong> ${lifetimeHighestStreak}</p>
         <p><strong>Average Year Difference (when not perfect):</strong> ${averageDifference} years</p>
         <p><strong>Most Common Incorrect Decade:</strong> ${mostCommonIncorrectDecade}</p>
         <p><em>(Stats are updated after each guess and saved in your browser.)</em></p>
         
+        <hr>
+        ${distributionHtml}
+
+        <hr>
+        ${topSongsHtml}
+
         <hr>
         <h3>Year-by-Year Performance</h3>
         <table>
@@ -1153,9 +1290,39 @@ function updateScoreDisplay() {
     }
     localStorage.setItem('gd_lifetimeHighestStreak', lifetimeHighestStreak);
 
-
-    document.getElementById('score').textContent = `Session Score: ${sessionPoints} | Highest Score: ${siteHighestScore} | Perfect Guess Streak: ${currentStreak}`;
+    // Animate score changes
+    animateNumber('sessionScoreValue', parseInt(document.getElementById('sessionScoreValue').textContent), sessionPoints, 500);
+    animateNumber('highestScoreValue', parseInt(document.getElementById('highestScoreValue').textContent), siteHighestScore, 500);
+    animateNumber('streakValue', parseInt(document.getElementById('streakValue').textContent), currentStreak, 500);
 }
+
+// Function to animate numbers
+function animateNumber(elementId, start, end, duration) {
+    const obj = document.getElementById(elementId);
+    if (!obj) return;
+
+    let startTime = null;
+
+    function easeInOutQuad(t) {
+        return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+    }
+
+    function animate(currentTime) {
+        if (!startTime) startTime = currentTime;
+        const progress = Math.min((currentTime - startTime) / duration, 1);
+        const easedProgress = easeInOutQuad(progress);
+        
+        obj.textContent = Math.floor(easedProgress * (end - start) + start);
+
+        if (progress < 1) {
+            requestAnimationFrame(animate);
+        } else {
+            obj.textContent = end; // Ensure final value is exactly 'end'
+        }
+    }
+    requestAnimationFrame(animate);
+}
+
 
 function toggleTimedMode(btn) {
     if (inDailyChallengeMode) { 
@@ -1183,12 +1350,17 @@ function startTimer() {
     timeLeft = initialTimeLimit; 
     const bar = document.getElementById('timerBar');
     bar.style.display = 'block';
-    bar.style.width = `${(timeLeft / initialTimeLimit) * 100}%`; 
-    if (timeLeft <= 0) {
-        clearInterval(timer);
-        if(!answerRevealed) revealAnswer();
-        bar.style.display = 'none';
-    }
+    bar.style.width = '100%';
+
+    timer = setInterval(() => {
+        timeLeft--;
+        bar.style.width = `${(timeLeft / initialTimeLimit) * 100}%`; 
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            if(!answerRevealed) revealAnswer();
+            bar.style.display = 'none';
+        }
+    }, 1000);
 }
 
 function filterByDecade(decadePrefix) {
@@ -1213,6 +1385,8 @@ function filterByDecade(decadePrefix) {
     document.getElementById('songInfoDisplay').textContent = '';
     document.getElementById('yearGuess').value = '';
     document.getElementById('checkButton').disabled = true;
+    document.getElementById('goButton').textContent = 'Go'; // Reset button to 'Go' when filter changes
+    document.getElementById('yearInputGuidance').style.display = 'none'; // Hide guidance
 }
 
 document.addEventListener('keydown', function(event) {
