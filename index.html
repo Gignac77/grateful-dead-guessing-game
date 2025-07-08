@@ -212,7 +212,7 @@
       transition: width 1s linear;
       margin-top: 1em;
       border-radius: 1em;
-      display: none;
+      display: none; /* Hidden by default, only shown when timed mode active */
     }
     @keyframes glow {
       0% { text-shadow: 0 0 5px #00ff88; }
@@ -315,11 +315,36 @@
         text-decoration: none;
         cursor: pointer;
     }
-    #summaryGraphic, #statsContent {
-        font-size: 2em;
-        letter-spacing: 0.2em;
+    #summaryGraphic { /* Specific style for daily summary graphic */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
         margin: 1em 0;
+        gap: 5px;
+        background: rgba(255,255,255,0.1);
+        padding: 15px;
+        border-radius: 8px;
+        min-height: 80px;
     }
+    .summary-block {
+        width: 60px; /* Size of each block */
+        height: 60px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        border-radius: 5px;
+        font-size: 0.8em;
+        font-weight: bold;
+        color: white;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    }
+    .summary-block.perfect { background-color: #28a745; } /* Green */
+    .summary-block.close { background-color: #ffc107; }    /* Yellow/Orange */
+    .summary-block.miss { background-color: #dc3545; }     /* Red */
+
+
     #summaryDetails, #statsDetails {
         text-align: left;
         white-space: pre-wrap;
@@ -476,10 +501,8 @@
     <div class="modal-content">
       <span class="modal-close" onclick="closeModal('dailySummaryModal')">&times;</span>
       <h2>Daily Results <span id="summaryDate" style="color: #ffc107;"></span></h2>
-      <div id="summaryGraphic"></div>
-      <hr>
-      <div id="summaryDetails"></div>
-      <button class="modal-button" onclick="copyShareLink(event, true)">Share Your Results</button>
+      <div id="summaryGraphic"></div> <hr>
+      <div id="summaryDetails"></div> <button class="modal-button" onclick="copyShareLink(event, true)">Share Your Results</button>
       <button class="modal-button continue" onclick="closeDailySummaryAndEnterFreePlay()">Continue to Free Play</button>
     </div>
   </div>
@@ -521,7 +544,7 @@ let timer = null;
 let initialTimeLimit = 20; 
 let timeLeft = initialTimeLimit; 
 let answerRevealed = false;
-let hasGuessedOnce = false; // To control year input guidance visibility
+let hasGuessedOnceThisSession = false; // To control year input guidance visibility (newly added)
 
 // --- GAME MODE GLOBAL VARIABLES ---
 const DAILY_CHALLENGE_SONG_COUNT = 5;
@@ -806,6 +829,10 @@ function updateGameModeUI() {
  * A single function to load the correct track based on game mode.
  */
 function loadTrack() {
+    // Clear any existing timer and hide the bar when a new track loads
+    clearInterval(timer); 
+    document.getElementById('timerBar').style.display = 'none'; 
+
     let track;
     if (inDailyChallengeMode) {
         if (dailyGuessesToday < DAILY_CHALLENGE_SONG_COUNT) {
@@ -859,7 +886,7 @@ function loadTrack() {
     // Hide year input guidance when a new song starts
     document.getElementById('yearInputGuidance').style.display = 'none';
 
-    if (timedMode) startTimer(); // Start/reset timer when new song loads
+    if (timedMode) startTimer(); // Start/reset timer ONLY if timed mode is active
 }
 
 function revealAnswer() {
@@ -869,9 +896,11 @@ function revealAnswer() {
     document.getElementById('timerBar').style.display = 'none';
     document.getElementById('checkButton').disabled = true;
 
-    // Show year input guidance after the first guess
-    hasGuessedOnce = true;
-    document.getElementById('yearInputGuidance').style.display = 'block';
+    // Show year input guidance after the first guess, only once per session in Free Play
+    if (!hasGuessedOnceThisSession && !inDailyChallengeMode) {
+        document.getElementById('yearInputGuidance').style.display = 'block';
+        hasGuessedOnceThisSession = true; 
+    }
 
     let guessInput = document.getElementById('yearGuess').value.trim();
     let guessedYearNum = parseInt(guessInput, 10);
@@ -1006,23 +1035,36 @@ function showDailySummary() {
     const graphicEl = document.getElementById('summaryGraphic');
     const detailsEl = document.getElementById('summaryDetails');
     
-    let graphic = dailyResults.map(r => {
-        if (r.correct) return '🟩';
-        if (r.close) return '🟨'; 
-        if (r.era) return '🟨'; 
-        return '🟥';
-    }).join('');
+    let dailyPerfectCount = dailyResults.filter(r => r.correct).length;
+    let dailyCloseCount = dailyResults.filter(r => r.close || r.era).length; // Combine close and era for the graphic
+    let dailyMissCount = dailyResults.filter(r => r.points === 0).length;
+
+    let graphicBlocksHtml = '';
+    dailyResults.forEach((r, index) => {
+        let blockClass = 'miss';
+        let blockText = 'Miss';
+        if (r.correct) {
+            blockClass = 'perfect';
+            blockText = 'Perfect';
+        } else if (r.close || r.era) {
+            blockClass = 'close';
+            blockText = 'Close';
+        }
+        graphicBlocksHtml += `
+            <div class="summary-block ${blockClass}">
+                ${index + 1}<br>${r.points}pts
+            </div>
+        `;
+    });
+    graphicEl.innerHTML = graphicBlocksHtml;
 
     let totalDailyPoints = dailyResults.reduce((sum, r) => sum + r.points, 0);
-    let dailyPerfect = dailyResults.filter(r => r.correct).length;
-    let dailyClose = dailyResults.filter(r => r.close).length;
-    let dailyEra = dailyResults.filter(r => r.era).length;
 
     detailsEl.innerHTML = `
         <strong>Your Daily Score: ${totalDailyPoints} Points</strong><br>
-        Perfect Guesses: ${dailyPerfect}<br>
-        Close Guesses: ${dailyClose}<br>
-        Era Matches: ${dailyEra}<br>
+        Perfect Guesses: ${dailyPerfectCount}<br>
+        Close Guesses: ${dailyCloseCount}<br>
+        Misses: ${dailyMissCount}<br>
         <hr>
         <h3>Your Guesses:</h3>
         ${dailyResults.map((result, index) => {
@@ -1212,7 +1254,7 @@ function showStatsModal() {
             <tbody>
                 ${sortedYears.map(year => `<tr><td>${year}</td><td>${yearlyBreakdown[year].games}</td><td>${yearlyBreakdown[year].points}</td></tr>`).join('')}
             </tbody>
-        </table>
+</table>
 
         <hr>
         <h3>Top Venues (by Points)</h3>
@@ -1279,7 +1321,7 @@ function updateScoreDisplay() {
     let lifetimeHighestStreak = 0;
     let currentConsecutivePerfect = 0;
     for (let i = 0; i < lifetimeGuessHistory.length; i++) {
-        if (lifetimeGuessHistory[i].points === 100) {
+        if (lifetimeGuessHistory[i].points === 100) { // Only count perfect guesses for streak
             currentConsecutivePerfect++;
         } else {
             currentConsecutivePerfect = 0;
@@ -1387,6 +1429,7 @@ function filterByDecade(decadePrefix) {
     document.getElementById('checkButton').disabled = true;
     document.getElementById('goButton').textContent = 'Go'; // Reset button to 'Go' when filter changes
     document.getElementById('yearInputGuidance').style.display = 'none'; // Hide guidance
+    hasGuessedOnceThisSession = false; // Reset guidance flag for new filter
 }
 
 document.addEventListener('keydown', function(event) {
